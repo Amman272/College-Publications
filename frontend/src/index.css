@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4F46E5;
+  --color-primary-dark: #4338ca;
+  --color-primary-light: #818cf8;
+  
+  --color-secondary: #06b6d4;
+  
+  --color-surface: #ffffff;
+  --color-surface-glass: rgba(255, 255, 255, 0.7);
+  
+  --color-background: #f8fafc;
+
+  --font-sans: Inter, sans-serif;
+  --font-heading: Outfit, sans-serif;
+
+  --shadow-premium: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+@layer base {
+  html, body {
+    @apply h-full;
+  }
+  #root {
+    @apply min-h-screen flex flex-col;
+  }
+  body {
+    @apply bg-background text-slate-900 font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-bold text-slate-900;
+  }
+}
+
+@layer components {
+  /* Enhanced Mobile Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-3 md:py-2 rounded-lg font-medium text-sm md:text-sm transition-all active:scale-[0.98] gap-2 disabled:opacity-70 disabled:cursor-not-allowed touch-manipulation;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40;
+  }
+  .btn-outline {
+    @apply bg-transparent border border-slate-200 text-slate-600 hover:bg-white hover:text-primary hover:border-primary transition-colors;
+  }
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/30;
+  }
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl shadow-md;
+  }
+  /* Hide scrollbar */
+  .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+  }
+  .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+  }
+}

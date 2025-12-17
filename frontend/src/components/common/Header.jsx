@@ -1,0 +1,152 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { LogIn, LogOut, Upload, BookOpen, Menu, X, User, Building2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import LoginModal from '../auth/LoginModal';
+import { AnimatePresence, motion } from 'framer-motion';
+
+const Header = () => {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    setIsMobileMenuOpen(false);
+  };
+
+  return (
+    <>
+      <header className="sticky top-0 z-40 w-full glass bg-white/80 border-b border-slate-200">
+        <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             {/* Collage Logo Placeholder */}
+             <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 overflow-hidden shrink-0 text-slate-400">
+                 <Building2 size={32} />
+             </div>
+
+             <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block"></div>
+
+             <Link to="/" className="flex items-center gap-3 group">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-tr from-primary to-secondary rounded-lg flex items-center justify-center text-white shadow-lg group-hover:shadow-indigo-500/30 transition-all">
+                <BookOpen size={20} className="md:w-6 md:h-6" />
+                </div>
+                <div className="flex flex-col">
+                <span className="font-heading font-bold text-sm md:text-lg leading-tight text-slate-900 line-clamp-1">
+                    Publishing Portal
+                </span>
+                <span className="text-[10px] md:text-xs text-slate-500 font-medium hidden sm:block">
+                    NRI Institute of Technology
+                </span>
+                </div>
+            </Link>
+          </div>
+
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-4">
+            {isAuthenticated ? (
+              <>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100 mr-2">
+                    <User size={14} className="text-slate-400"/>
+                    <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]">{user?.userEmail}</span>
+                </div>
+                <Link 
+                  to="/upload" 
+                  className="btn btn-primary"
+                >
+                  <Upload size={18} />
+                  Upload Publication
+                </Link>
+                <button 
+                  onClick={handleLogout}
+                  className="btn btn-outline"
+                >
+                  <LogOut size={18} />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button 
+                onClick={() => setIsLoginOpen(true)}
+                className="btn btn-primary"
+              >
+                <LogIn size={18} />
+                Faculty Login
+              </button>
+            )}
+          </nav>
+
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+
+        {/* Mobile Nav */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden border-b border-slate-200 overflow-hidden bg-white"
+            >
+              <div className="p-4 space-y-3">
+                 {isAuthenticated ? (
+                  <>
+                    <div className="flex items-center gap-3 w-full p-3 bg-slate-50 rounded-lg border border-slate-100 mb-2">
+                        <User size={20} className="text-slate-400"/>
+                        <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Logged in as</span>
+                            <span className="text-sm font-medium text-slate-700 truncate">{user?.userEmail}</span>
+                        </div>
+                    </div>
+                    
+                    <Link 
+                      to="/upload" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-3 w-full p-3 bg-indigo-50 text-primary rounded-lg font-medium"
+                    >
+                      <Upload size={20} />
+                      Upload Publication
+                    </Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full p-3 text-slate-600 hover:bg-slate-50 rounded-lg font-medium"
+                    >
+                      <LogOut size={20} />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    onClick={() => {
+                        setIsLoginOpen(true);
+                        setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full p-3 bg-indigo-50 text-primary rounded-lg font-medium"
+                  >
+                    <LogIn size={20} />
+                    Faculty Login
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      <LoginModal 
+        isOpen={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
+      />
+    </>
+  );
+};
+
+export default Header;

@@ -1,0 +1,42 @@
+POST http://localhost:3000/login/otpSend
+Content-Type: application/json
+
+{
+  "email": "ammanfawaz2727@gmail.com"
+}
+###
+POST http://localhost:3000/login/otpVerify
+Content-Type: application/json
+
+{
+    "email": "ammanfawaz2727@gmail.com",
+    "otp": "0"
+}
+###
+
+### TEST formEntry (Insert Publication Data)
+
+POST http://localhost:3000/form/formEntry
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyRW1haWwiOiJhbW1hbmZhd2F6MjcyN0BnbWFpbC5jb20iLCJpYXQiOjE3NjUxMDg0MTcsImV4cCI6MTc2NzcwMDQxN30.gKUmc38chkErNfY-OgfpE5WW5s3PjsxLEWqOatzLu5s",
+Content-Type: application/json
+
+{
+  "mainAuthor": "John Doe",
+  "title": "Deep Learning Research",
+  "email": "john@example.com",
+  "phone": "9876543210",
+  "dept": "CSE",
+  "coauthors": "Mark, Susan",
+  "journal": "IJAR",
+  "publisher": "Elsevier",
+  "year": 2024,
+  "vol": "12",
+  "issueNo": "3",
+  "pages": "123-130",
+  "indexation": "Scopus",
+  "pdfUrl": "https://example.com/paper.pdf"
+}
+
+###
+
+GET http://localhost:3000/form/formGet
