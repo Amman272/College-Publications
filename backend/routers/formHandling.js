@@ -11,6 +11,7 @@ const __dirname = path.dirname(__filename);
 
 const adminEmails = ["ammanfawaz272@gmail.com"];
 
+
 const isAdmin = (email) => adminEmails.includes(email);
 
 router.post("/formEntry", verifyToken, (req, res) => {

@@ -1,0 +1,47 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend",
+      "type": "shell",
+      "isBackground": true,
+
+      "command": "node index.js",
+      "options": {
+        "cwd": "${workspaceFolder}/backend",
+        "shell": {
+          "executable": "powershell.exe"
+        }
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "backend"
+      }
+    },
+    {
+      "label": "Frontend",
+      "type": "shell",
+      "isBackground": true,
+
+      "command": "npx vite --host 0.0.0.0",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend",
+        "shell": {
+          "executable": "powershell.exe"
+        }
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "frontend"
+      }
+    },
+    {
+      "label": "Full Stack",
+      "dependsOn": ["Backend", "Frontend"],
+      "dependsOrder": "parallel",
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    }
+  ]
+}

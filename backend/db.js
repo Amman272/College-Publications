@@ -23,3 +23,10 @@ CREATE TABLE IF NOT EXISTS publications (
     pdfUrl TEXT
 );
 `).run();
+
+// admin table
+db.prepare(`
+    CREATE TABLE IF NOT EXISTS admins(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    EMAIL TEXT UNIQUE NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`).run();
