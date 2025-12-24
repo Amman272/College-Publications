@@ -65,6 +65,7 @@ const PublicationsTable = ({ showActions = false }) => {
       // Remove from local state
       setData(prev => prev.filter(item => item.id !== deleteId));
       setDeleteId(null);
+      console.log('Deleted successfully');
     } catch (err) {
         alert(err.response?.data?.message || 'Failed to delete');
     }

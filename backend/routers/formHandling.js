@@ -2,17 +2,20 @@ import { Router } from "express";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { db } from "../db.js";
 import ExcelJS from "exceljs";
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from "path";
+import { fileURLToPath } from "url";
 
 const router = Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const adminEmails = ["ammanfawaz272@gmail.com"];
+//const adminEmails = ["ammanfawaz272@gmail.com"];
 
-
-const isAdmin = (email) => adminEmails.includes(email);
+//const isAdmin = (email) => adminEmails.includes(email);
+const isAdmin = (email) => {
+  const user = db.prepare("select 1 from admins WHERE email = ?").get(email);
+  return !!user;
+};
 
 router.post("/formEntry", verifyToken, (req, res) => {
   const {
@@ -61,16 +64,18 @@ router.post("/formEntry", verifyToken, (req, res) => {
 });
 
 router.put("/formEntryBatchUpdate", verifyToken, (req, res) => {
-  // Batch update usually for admin or massive changes, strictly restrict or keep as is? 
+  // Batch update usually for admin or massive changes, strictly restrict or keep as is?
   // User didn't specify batch update rules, but implied admin access allows editing ANY entry.
-  // For now I will assume this is an admin-only or specific feature. 
+  // For now I will assume this is an admin-only or specific feature.
   // As per instructions "users can edit only their entry", batch update makes it hard to enforce "only their entry" unless we check every single one.
   // I will leave it but add admin check if feasible, or just leave as is if it's used for bulk import corrections.
   // Actually, let's restrict to Admin for safety if this is "Bulk Import" related fix.
   // But wait, user said "add a admin acesss acount whihc allows any entry to be deleted and eddited".
-  
+
   if (!isAdmin(req.user.userEmail)) {
-     return res.status(403).json({ message: "Only admins can perform batch updates." });
+    return res
+      .status(403)
+      .json({ message: "Only admins can perform batch updates." });
   }
 
   const updates = req.body; // expecting array of updates
@@ -158,16 +163,20 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
   const userEmail = req.user.userEmail;
 
   try {
-     // Check ownership or admin
-     const entry = db.prepare("SELECT email FROM publications WHERE id = ?").get(id);
+    // Check ownership or admin
+    const entry = db
+      .prepare("SELECT email FROM publications WHERE id = ?")
+      .get(id);
 
-     if (!entry) {
-       return res.status(404).json({ message: "Entry not found" });
-     }
- 
-     if (entry.email !== userEmail && !isAdmin(userEmail)) {
-       return res.status(403).json({ message: "You are not authorized to edit this entry" });
-     }
+    if (!entry) {
+      return res.status(404).json({ message: "Entry not found" });
+    }
+
+    if (entry.email !== userEmail && !isAdmin(userEmail)) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to edit this entry" });
+    }
 
     const info = db
       .prepare(
@@ -203,29 +212,34 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
 router.delete("/deleteEntry/:id", verifyToken, (req, res) => {
   const { id } = req.params;
   const userEmail = req.user.userEmail;
-
+console.log(userEmail);
   try {
     // 1. Check ownership
-    const entry = db.prepare("SELECT email FROM publications WHERE id = ?").get(id);
+    const entry = db
+      .prepare("SELECT email FROM publications WHERE id = ?")
+      .get(id);
 
     if (!entry) {
       return res.status(404).json({ message: "Publication not found" });
     }
 
     if (entry.email !== userEmail && !isAdmin(userEmail)) {
-      return res.status(403).json({ message: "You are not authorized to delete this entry" });
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to delete this entry" });
     }
 
     // 2. Delete
     const info = db.prepare("DELETE FROM publications WHERE id = ?").run(id);
 
-    return res.status(200).json({ message: "Publication deleted successfully" });
+    return res
+      .status(200)
+      .json({ message: "Publication deleted successfully" });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
-
 
 router.get("/formGet", (req, res) => {
   try {
@@ -235,8 +249,6 @@ router.get("/formGet", (req, res) => {
     return res.status(500).json({ message: "error reading database" });
   }
 });
-
-
 
 router.get("/downloadExcel", async (req, res) => {
   try {
@@ -263,22 +275,22 @@ router.get("/downloadExcel", async (req, res) => {
       { header: "Issue No", key: "issueNo", width: 10 },
       { header: "Pages", key: "pages", width: 15 },
       { header: "Indexation", key: "indexation", width: 20 },
-      { header: "PDF URL", key: "pdfUrl", width: 40 }
+      { header: "PDF URL", key: "pdfUrl", width: 40 },
     ];
 
     // ⭐ Add header styling
     worksheet.getRow(1).eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };         // White text
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; // White text
       cell.fill = {
         type: "pattern",
         pattern: "solid",
-        fgColor: { argb: "FF4CAF50" }                                 // Green background
+        fgColor: { argb: "FF4CAF50" }, // Green background
       };
       cell.border = {
         top: { style: "thin" },
         left: { style: "thin" },
         bottom: { style: "thin" },
-        right: { style: "thin" }
+        right: { style: "thin" },
       };
       cell.alignment = { vertical: "middle", horizontal: "center" };
     });
@@ -299,8 +311,7 @@ router.get("/downloadExcel", async (req, res) => {
     // Write workbook to response
     await workbook.xlsx.write(res);
     res.end();
-    console.log("done")
-
+    console.log("done");
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Failed to generate Excel file" });
@@ -310,18 +321,17 @@ router.get("/downloadExcel", async (req, res) => {
 router.get("/downloadTemplate", (req, res) => {
   try {
     // Adjust path to go up one level from 'routers' to 'backend', then into 'template'
-    const file = path.join(__dirname, '..', 'template', 'publications.xlsx');
-    res.download(file, 'publications_template.xlsx', (err) => {
-        if (err) {
-            console.error("Error downloading template:", err);
-            res.status(500).json({ message: "Could not download template" });
-        }
+    const file = path.join(__dirname, "..", "template", "publications.xlsx");
+    res.download(file, "publications_template.xlsx", (err) => {
+      if (err) {
+        console.error("Error downloading template:", err);
+        res.status(500).json({ message: "Could not download template" });
+      }
     });
   } catch (e) {
-      console.error(e);
-      res.status(500).json({ message: "Server error" });
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
   }
 });
-
 
 export default router;

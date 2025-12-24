@@ -2,16 +2,11 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Backend",
+      "label": "Run Backend (nodemon)",
       "type": "shell",
-      "isBackground": true,
-
-      "command": "node index.js",
+      "command": "powershell -NoExit -Command \"nodemon index.js\"",
       "options": {
-        "cwd": "${workspaceFolder}/backend",
-        "shell": {
-          "executable": "powershell.exe"
-        }
+        "cwd": "${workspaceFolder}/backend"
       },
       "presentation": {
         "panel": "dedicated",
@@ -19,16 +14,11 @@
       }
     },
     {
-      "label": "Frontend",
+      "label": "Run Frontend (vite)",
       "type": "shell",
-      "isBackground": true,
-
-      "command": "npx vite --host 0.0.0.0",
+      "command": "powershell -NoExit -Command \"npx vite --host 0.0.0.0\"",
       "options": {
-        "cwd": "${workspaceFolder}/frontend",
-        "shell": {
-          "executable": "powershell.exe"
-        }
+        "cwd": "${workspaceFolder}/frontend"
       },
       "presentation": {
         "panel": "dedicated",
@@ -36,8 +26,11 @@
       }
     },
     {
-      "label": "Full Stack",
-      "dependsOn": ["Backend", "Frontend"],
+      "label": "Run Full Stack",
+      "dependsOn": [
+        "Run Backend (nodemon)",
+        "Run Frontend (vite)"
+      ],
       "dependsOrder": "parallel",
       "runOptions": {
         "runOn": "folderOpen"
