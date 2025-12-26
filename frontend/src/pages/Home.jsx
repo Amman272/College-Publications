@@ -4,6 +4,8 @@ import Footer from '../components/common/Footer';
 import PublicationsTable from '../components/data/PublicationsTable';
 
 const Home = () => {
+const [isAdminPopup, setIsAdminPopup] = useState(false);
+  
   return (
     <div className="min-h-screen flex flex-col bg-[--background]">
       <Header />

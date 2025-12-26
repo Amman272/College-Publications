@@ -17,6 +17,12 @@ const isAdmin = (email) => {
   return !!user;
 };
 
+router.post("/isAdmin", verifyToken,(req,res)=>{
+  const email = req.user.userEmail;
+   const user = db.prepare("select 1 from admins WHERE email = ?").get(email);
+   return res.status(200).json({isAdmin: !!user });
+});
+
 router.post("/formEntry", verifyToken, (req, res) => {
   const {
     mainAuthor,

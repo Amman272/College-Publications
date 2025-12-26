@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 const Header = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -46,37 +47,52 @@ const Header = () => {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-4">
-            {isAuthenticated ? (
-              <>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100 mr-2">
-                    <User size={14} className="text-slate-400"/>
-                    <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]">{user?.userEmail}</span>
-                </div>
-                <Link 
-                  to="/upload" 
-                  className="btn btn-primary"
-                >
-                  <Upload size={18} />
-                  Upload Publication
-                </Link>
-                <button 
-                  onClick={handleLogout}
-                  className="btn btn-outline"
-                >
-                  <LogOut size={18} />
-                  Logout
-                </button>
-              </>
-            ) : (
-              <button 
-                onClick={() => setIsLoginOpen(true)}
-                className="btn btn-primary"
-              >
-                <LogIn size={18} />
-                Faculty Login
-              </button>
-            )}
-          </nav>
+
+  {/* If user is logged in */}
+  {isAuthenticated ? (
+    <>
+      {/* User email pill */}
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100 mr-2">
+        <User size={14} className="text-slate-400" />
+        <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]">
+          {user?.userEmail}
+        </span>
+      </div>
+
+
+ <button onClick={()=>setIsAdminPopup(true)} className="btn btn-outline">
+        <LogOut size={18} />
+        Admin Dashboard
+      </button>
+
+
+      {/* Upload button */}
+      <Link to="/upload" className="btn btn-primary">
+        <Upload size={18} />
+        Upload Publication
+      </Link>
+
+      {/* Logout button */}
+      <button onClick={handleLogout} className="btn btn-outline">
+        <LogOut size={18} />
+        Logout
+      </button>
+      
+    </>
+    
+  ) : (
+    /* If user is NOT logged in */
+    <button
+      onClick={() => setIsLoginOpen(true)}
+      className="btn btn-primary"
+    >
+      <LogIn size={18} />
+      Faculty Login
+    </button>
+  )}
+
+</nav>
+
 
           {/* Mobile Menu Button */}
           <button 
