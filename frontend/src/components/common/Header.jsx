@@ -9,7 +9,7 @@ const Header = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -60,10 +60,12 @@ const Header = () => {
       </div>
 
 
- <button onClick={()=>setIsAdminPopup(true)} className="btn btn-outline">
-        <LogOut size={18} />
-        Admin Dashboard
-      </button>
+       {isAdmin && (
+        <Link to="/admin-dashboard" className="btn btn-outline border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+          <Building2 size={18} />
+          Admin Dashboard
+        </Link>
+       )}
 
 
       {/* Upload button */}

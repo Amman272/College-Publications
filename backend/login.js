@@ -6,10 +6,11 @@ const otpStore = {};
 const expiryTime = 5 * 60 * 1000;
 router.post("/otpSend", async (req, res) => {
   try {
-    const { email } = req.body;
+    let { email } = req.body;
+    email = email.toLowerCase();
     const otp = Math.floor(100000 + Math.random() * 900000);
     // const otp = 0;
-    console.log(otp);
+    //console.log(otp);
     const otpstr = otp.toString();
     otpStore[email] = {
       code: otpstr,
@@ -149,7 +150,8 @@ router.post("/otpSend", async (req, res) => {
 });
 
 router.post("/otpVerify", (req, res) => {
-  const { email, otp } = req.body;
+  let { email, otp } = req.body;
+  email = email.toLowerCase();
   const storedData = otpStore[email];
   if (!storedData) {
     return res.status(400).json({ message: "no otp found" });
@@ -171,7 +173,7 @@ router.post("/otpVerify", (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: "30d",
     });
-    console.log(token);
+   // console.log(token);
 
     return res
       .status(200)

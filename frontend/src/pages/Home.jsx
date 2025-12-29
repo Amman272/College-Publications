@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Download } from 'lucide-react';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
 import PublicationsTable from '../components/data/PublicationsTable';
@@ -52,7 +54,20 @@ const [isAdminPopup, setIsAdminPopup] = useState(false);
         </section>
 
         {/* Data Table Section */}
-        <section id="publications">
+        <section id="publications" className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <h2 className="text-2xl font-bold text-slate-900">Publications Database</h2>
+            <div className="flex items-center gap-2">
+              <a
+                href="/form/downloadExcel"
+                target="_blank"
+                download
+                className="btn bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 text-sm py-2"
+              >
+                <Download size={16} /> Download Excel
+              </a>
+            </div>
+          </div>
           <PublicationsTable />
         </section>
       </main>

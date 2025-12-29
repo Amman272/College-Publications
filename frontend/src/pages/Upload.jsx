@@ -100,6 +100,23 @@ const Upload = () => {
                     </span>
                   </div>
                 </button>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <a
+                    href="/form/downloadExcel"
+                    target="_blank"
+                    download
+                    className="w-full btn bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 justify-start h-auto py-3"
+                  >
+                    <div className="p-2 bg-white rounded-lg shadow-sm text-green-600">
+                      <Download size={20} />
+                    </div>
+                    <div className="text-left">
+                      <span className="block font-semibold">Export to Excel</span>
+                      <span className="text-[10px] opacity-75 font-normal">Download full database</span>
+                    </div>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -111,14 +128,6 @@ const Upload = () => {
             <h3 className="font-semibold text-sm uppercase tracking-wide text-slate-500 flex items-center gap-2">
               Database Preview
             </h3>
-            <a
-              href="/form/downloadExcel"
-              target="_blank"
-              download
-              className="btn btn-sm btn-outline text-xs h-8"
-            >
-              <Download size={14} /> Download Full Excel
-            </a>
           </div>
           <div className="flex-grow p-0 overflow-hidden">
             <PublicationsTable key={refreshTrigger} showActions={true} />

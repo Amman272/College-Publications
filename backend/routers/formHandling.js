@@ -13,14 +13,24 @@ const __dirname = path.dirname(__filename);
 
 //const isAdmin = (email) => adminEmails.includes(email);
 const isAdmin = (email) => {
-  const user = db.prepare("select 1 from admins WHERE email = ?").get(email);
-  return !!user;
+  try {
+    const user = db.prepare("select 1 from admins WHERE EMAIL = ? COLLATE NOCASE").get(email);
+    return !!user;
+  } catch (err) {
+    console.error("isAdmin check failed:", err);
+    return false;
+  }
 };
 
 router.post("/isAdmin", verifyToken,(req,res)=>{
-  const email = req.user.userEmail;
-   const user = db.prepare("select 1 from admins WHERE email = ?").get(email);
-   return res.status(200).json({isAdmin: !!user });
+  try {
+    const email = req.user.userEmail;
+    const user = db.prepare("select 1 from admins WHERE EMAIL = ? COLLATE NOCASE").get(email);
+    return res.status(200).json({isAdmin: !!user });
+  } catch (err) {
+    console.error("/isAdmin route failed:", err);
+    return res.status(500).json({ message: "Internal server error", error: err.message });
+  }
 });
 
 router.post("/formEntry", verifyToken, (req, res) => {
@@ -38,14 +48,18 @@ router.post("/formEntry", verifyToken, (req, res) => {
     issueNo,
     pages,
     indexation,
+    issnNo,
+    journalLink,
+    ugcApproved,
+    impactFactor,
     pdfUrl,
   } = req.body;
 
   try {
     db.prepare(
       `INSERT INTO publications 
-  (mainAuthor, title, email, phone, dept, coauthors, journal, publisher, year, vol, issueNo, pages, indexation, pdfUrl)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  (mainAuthor, title, email, phone, dept, coauthors, journal, publisher, year, vol, issueNo, pages, indexation, issnNo, journalLink, ugcApproved, impactFactor, pdfUrl)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       mainAuthor,
       title,
@@ -60,6 +74,10 @@ router.post("/formEntry", verifyToken, (req, res) => {
       issueNo,
       pages,
       indexation,
+      issnNo,
+      journalLink,
+      ugcApproved,
+      impactFactor,
       pdfUrl
     );
     return res.status(200).json({ message: "data stored suceessfully" });
@@ -108,6 +126,10 @@ router.put("/formEntryBatchUpdate", verifyToken, (req, res) => {
         issueNo = COALESCE(?, issueNo),
         pages = COALESCE(?, pages),
         indexation = COALESCE(?, indexation),
+        issnNo = COALESCE(?, issnNo),
+        journalLink = COALESCE(?, journalLink),
+        ugcApproved = COALESCE(?, ugcApproved),
+        impactFactor = COALESCE(?, impactFactor),
         pdfUrl = COALESCE(?, pdfUrl)
       WHERE id = ?
     `);
@@ -129,6 +151,10 @@ router.put("/formEntryBatchUpdate", verifyToken, (req, res) => {
           row.issueNo ?? null,
           row.pages ?? null,
           row.indexation ?? null,
+          row.issnNo ?? null,
+          row.journalLink ?? null,
+          row.ugcApproved ?? null,
+          row.impactFactor ?? null,
           row.pdfUrl ?? null,
           row.id
         );
@@ -163,6 +189,10 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
     issueNo,
     pages,
     indexation,
+    issnNo,
+    journalLink,
+    ugcApproved,
+    impactFactor,
     pdfUrl,
   } = req.body;
 
@@ -187,7 +217,7 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
     const info = db
       .prepare(
         `UPDATE publications 
-      SET mainAuthor = ?, title = ?, email = ?, phone = ?, dept = ?, coauthors = ?, journal = ?, publisher = ?, year = ?, vol = ?, issueNo = ?, pages = ?, indexation = ?, pdfUrl = ?
+      SET mainAuthor = ?, title = ?, email = ?, phone = ?, dept = ?, coauthors = ?, journal = ?, publisher = ?, year = ?, vol = ?, issueNo = ?, pages = ?, indexation = ?, issnNo = ?, journalLink = ?, ugcApproved = ?, impactFactor = ?, pdfUrl = ?
       WHERE id = ?`
       )
       .run(
@@ -204,6 +234,10 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
         issueNo,
         pages,
         indexation,
+        issnNo,
+        journalLink,
+        ugcApproved,
+        impactFactor,
         pdfUrl,
         id
       );
@@ -252,7 +286,8 @@ router.get("/formGet", (req, res) => {
     const rows = db.prepare("select * from publications").all();
     return res.json(rows);
   } catch (e) {
-    return res.status(500).json({ message: "error reading database" });
+    console.error(e);
+    return res.status(500).json({ message: "error reading database", error: e.message });
   }
 });
 
@@ -265,27 +300,52 @@ router.get("/downloadExcel", async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Publications");
 
-    // Define columns
-    worksheet.columns = [
+    // 1. Add Title Row
+    worksheet.mergeCells("A1:S1");
+    const titleRow = worksheet.getRow(1);
+    titleRow.getCell(1).value = "FACULTY PAPER PUBLICATIONS";
+    titleRow.getCell(1).font = {
+      name: "Arial",
+      family: 4,
+      size: 16,
+      bold: true,
+    };
+    titleRow.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
+    titleRow.height = 30;
+
+    // 2. Define Headers & Widths manually
+    const columns = [
       { header: "ID", key: "id", width: 10 },
-      { header: "Main Author", key: "mainAuthor", width: 20 },
-      { header: "Title", key: "title", width: 30 },
+      { header: "Main Author", key: "mainAuthor", width: 25 },
+      { header: "Title", key: "title", width: 40 },
       { header: "Email", key: "email", width: 30 },
       { header: "Phone", key: "phone", width: 15 },
       { header: "Dept", key: "dept", width: 15 },
-      { header: "Coauthors", key: "coauthors", width: 25 },
-      { header: "Journal", key: "journal", width: 20 },
-      { header: "Publisher", key: "publisher", width: 20 },
+      { header: "Coauthors", key: "coauthors", width: 30 },
+      { header: "Journal", key: "journal", width: 25 },
+      { header: "Publisher", key: "publisher", width: 25 },
       { header: "Year", key: "year", width: 10 },
       { header: "Volume", key: "vol", width: 10 },
       { header: "Issue No", key: "issueNo", width: 10 },
       { header: "Pages", key: "pages", width: 15 },
       { header: "Indexation", key: "indexation", width: 20 },
+      { header: "ISSN No", key: "issnNo", width: 20 },
+      { header: "Journal Link", key: "journalLink", width: 30 },
+      { header: "UGC Approved", key: "ugcApproved", width: 15 },
+      { header: "Impact Factor", key: "impactFactor", width: 15 },
       { header: "PDF URL", key: "pdfUrl", width: 40 },
     ];
 
-    // ⭐ Add header styling
-    worksheet.getRow(1).eachCell((cell) => {
+    // Set widths
+    columns.forEach((col, index) => {
+      worksheet.getColumn(index + 1).width = col.width;
+    });
+
+    // Add Header Row at Row 2
+    const headerRow = worksheet.addRow(columns.map((c) => c.header));
+
+    // Style Header Row
+    headerRow.eachCell((cell) => {
       cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; // White text
       cell.fill = {
         type: "pattern",
@@ -298,11 +358,28 @@ router.get("/downloadExcel", async (req, res) => {
         bottom: { style: "thin" },
         right: { style: "thin" },
       };
-      cell.alignment = { vertical: "middle", horizontal: "center" };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    });
+    headerRow.height = 25; // Header height
+
+    // 3. Add Data Rows
+    rows.forEach((row) => {
+      const rowData = columns.map((col) => row[col.key]);
+      const newRow = worksheet.addRow(rowData);
+      
+      // Style Data Cells: Alignment and Wrap Text for readability
+      newRow.eachCell({ includeEmpty: true }, (cell) => {
+        cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+      });
     });
 
-    // Add rows to sheet
-    rows.forEach((row) => worksheet.addRow(row));
+
 
     // Response headers for browser download
     res.setHeader(
@@ -324,16 +401,87 @@ router.get("/downloadExcel", async (req, res) => {
   }
 });
 
-router.get("/downloadTemplate", (req, res) => {
+router.get("/downloadTemplate", async (req, res) => {
   try {
-    // Adjust path to go up one level from 'routers' to 'backend', then into 'template'
-    const file = path.join(__dirname, "..", "template", "publications.xlsx");
-    res.download(file, "publications_template.xlsx", (err) => {
-      if (err) {
-        console.error("Error downloading template:", err);
-        res.status(500).json({ message: "Could not download template" });
-      }
+    // Generate a new workbook for the template
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Publications");
+
+    // 1. Add Title Row
+    worksheet.mergeCells("A1:S1");
+    const titleRow = worksheet.getRow(1);
+    titleRow.getCell(1).value = "FACULTY PAPER PUBLICATIONS";
+    titleRow.getCell(1).font = {
+      name: "Arial",
+      family: 4,
+      size: 16,
+      bold: true,
+    };
+    titleRow.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
+    titleRow.height = 30;
+
+    // 2. Define Headers & Widths manually
+    const columns = [
+      { header: "ID", width: 10 },
+      { header: "Main Author", width: 25 },
+      { header: "Title", width: 40 },
+      { header: "Email", width: 30 },
+      { header: "Phone", width: 15 },
+      { header: "Dept", width: 15 },
+      { header: "Coauthors", width: 30 },
+      { header: "Journal", width: 25 },
+      { header: "Publisher", width: 25 },
+      { header: "Year", width: 10 },
+      { header: "Volume", width: 10 },
+      { header: "Issue No", width: 10 },
+      { header: "Pages", width: 15 },
+      { header: "Indexation", width: 20 },
+      { header: "ISSN No", width: 20 },
+      { header: "Journal Link", width: 30 },
+      { header: "UGC Approved", width: 15 },
+      { header: "Impact Factor", width: 15 },
+      { header: "PDF URL", width: 40 },
+    ];
+
+    // Set widths
+    columns.forEach((col, index) => {
+      worksheet.getColumn(index + 1).width = col.width;
     });
+
+    // Add Header Row at Row 2
+    const headerRow = worksheet.addRow(columns.map((c) => c.header));
+
+    // Style Header Row
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; // White text
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF4CAF50" }, // Green background
+      };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    });
+    headerRow.height = 25; // Header height
+
+    // Response headers for browser download
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=publications_template.xlsx"
+    );
+
+    // Write workbook to response
+    await workbook.xlsx.write(res);
+    res.end();
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });

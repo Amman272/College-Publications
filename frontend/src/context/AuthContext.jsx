@@ -8,6 +8,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export const AuthProvider = ({ children }) => {
             const decoded = JSON.parse(jsonPayload);
             setUser(decoded); // { userEmail: ... }
             setIsAuthenticated(true);
+            checkAdminStatus(token);
         } catch (e) {
             console.error("Invalid token", e);
             localStorage.removeItem('token');
@@ -31,6 +33,19 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
   }, []);
+
+  const checkAdminStatus = async (token) => {
+    try {
+      const response = await api.post("/form/isAdmin", {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log("Admin Check Response:", response.data);
+      setIsAdmin(response.data.isAdmin);
+    } catch (error) {
+       console.error("Failed to check admin status", error);
+       setIsAdmin(false);
+    }
+  };
 
   const login = (token) => {
     localStorage.setItem('token', token);
@@ -44,6 +59,7 @@ export const AuthProvider = ({ children }) => {
         const decoded = JSON.parse(jsonPayload);
         setUser(decoded);
         setIsAuthenticated(true);
+        checkAdminStatus(token);
     } catch (e) {
         console.error("Error decoding token during login", e);
     }
@@ -53,10 +69,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setIsAuthenticated(false);
     setUser(null);
+    setIsAdmin(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, isAdmin, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Save, CloudUpload, Edit } from 'lucide-react';
+import { motion } from 'framer-motion';
 import api from '../../api/axios';
 
 const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
@@ -20,19 +21,39 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
     issueNo: '',
     pages: '',
     indexation: '',
+    issnNo: '',
+    journalLink: '',
+    ugcApproved: '',
+    impactFactor: '',
     pdfUrl: ''
   };
 
   const [formData, setFormData] = useState(initialForm);
+  const [showOtherIndexation, setShowOtherIndexation] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+      const standardIndexations = ['SCI', 'SCOPUS', 'WOS', 'UGC', ''];
+      if (!standardIndexations.includes(initialData.indexation)) {
+        setShowOtherIndexation(true);
+      }
     }
   }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    if (name === 'indexation') {
+      if (value === 'OTHER') {
+        setShowOtherIndexation(true);
+        setFormData(prev => ({ ...prev, indexation: '' }));
+        return;
+      } else {
+        setShowOtherIndexation(false);
+      }
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -157,24 +178,75 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
             <label className={labelClass}>Pages</label>
             <input name="pages" value={formData.pages || ''} onChange={handleChange} className={inputClass} placeholder="100-112" />
          </div>
-         <div>
+          <div>
             <label className={labelClass}>Indexation</label>
-            <select name="indexation" value={formData.indexation || ''} onChange={handleChange} className={inputClass}>
-                <option value="">Select</option>
-                <option value="SCI">SCI</option>
-                <option value="SCOPUS">SCOPUS</option>
-                <option value="WOS">Web of Science</option>
-                <option value="UGC">UGC Care</option>
-                <option value="OTHER">Other</option>
-            </select>
-         </div>
+            <div className="space-y-2">
+              <select 
+                name="indexation" 
+                value={showOtherIndexation ? 'OTHER' : (formData.indexation || '')} 
+                onChange={handleChange} 
+                className={inputClass}
+              >
+                  <option value="">Select</option>
+                  <option value="SCI">SCI</option>
+                  <option value="SCOPUS">SCOPUS</option>
+                  <option value="WOS">Web of Science</option>
+                  <option value="UGC">UGC Care</option>
+                  <option value="OTHER">Other</option>
+              </select>
+              
+              {showOtherIndexation && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <input 
+                    name="indexation" 
+                    value={formData.indexation || ''} 
+                    onChange={(e) => setFormData(prev => ({ ...prev, indexation: e.target.value }))} 
+                    className={inputClass} 
+                    placeholder="Enter Indexation (e.g. IEEE, Springer)" 
+                  />
+                </motion.div>
+              )}
+            </div>
+          </div>
       </div>
       
+      {/* ISSN & Journal Link */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass}>ISSN No</label>
+          <input name="issnNo" value={formData.issnNo || ''} onChange={handleChange} className={inputClass} placeholder="1234-5678" />
+        </div>
+        
+      </div>
+
+      {/* UGC & Impact Factor */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass}>UGC Approved</label>
+          <select name="ugcApproved" value={formData.ugcApproved || ''} onChange={handleChange} className={inputClass}>
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Impact Factor</label>
+          <input name="impactFactor" value={formData.impactFactor || ''} onChange={handleChange} className={inputClass} placeholder="5.2" />
+        </div>
+      </div>
+
       {/* PDF URL */}
       <div>
-        <label className={labelClass}>PDF Link (Google Drive/DOI)</label>
+        <label className={labelClass}>Link to article</label>
         <input type="url" name="pdfUrl" value={formData.pdfUrl || ''} onChange={handleChange} className={inputClass} placeholder="https://..." />
       </div>
+      <div>
+          <label className={labelClass}>Journal Link</label>
+          <input name="journalLink" value={formData.journalLink || ''} onChange={handleChange} className={inputClass} placeholder="https://journal.com/..." />
+        </div>
 
       <div className="pt-4">
         <button 

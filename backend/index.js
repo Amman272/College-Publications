@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express"
 import loginRoutes from "./login.js"
 import FormRoutes from "./routers/formHandling.js"
+import AdminRoutes from "./routers/Admin.js"
 import cors from "cors"
 import helmet from "helmet";
 import compression from "compression";
@@ -12,6 +13,19 @@ const app= express();
 app.use(helmet());
 app.use(compression());
 app.use(express.json());
+
+// Seed initial admin
+import { db } from "./db.js";
+try {
+  const adminEmail = "ammanfawaz272@gmail.com";
+  const row = db.prepare("SELECT 1 FROM admins WHERE EMAIL = ?").get(adminEmail);
+  if (!row) {
+    db.prepare("INSERT INTO admins (EMAIL) VALUES (?)").run(adminEmail);
+    console.log(`Seeded admin: ${adminEmail}`);
+  }
+} catch (e) {
+  console.error("Failed to seed admin:", e);
+}
 
 const isLocalOrigin = (origin) => {
     if (!origin) return true;
@@ -34,6 +48,7 @@ app.use(cors(corsOptions));
 
 app.use("/login",loginRoutes);
 app.use("/form",FormRoutes);
+app.use("/admin",AdminRoutes);
 app.listen(port, '0.0.0.0', ()=>{
 console.log(`Running at 0.0.0.0:${port}`)
 })

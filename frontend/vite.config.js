@@ -9,6 +9,7 @@ export default defineConfig({
     proxy: {
       '/login': 'http://localhost:3000',
       '/form': 'http://localhost:3000',
+      '/admin': 'http://localhost:3000',
     }
   }
 })

@@ -13,5 +13,9 @@ CREATE TABLE IF NOT EXISTS publications (
     issueNo TEXT,
     pages TEXT,
     indexation TEXT,
+    ISSN No TEXT,
+    Journal Link TEXT,
+    UGC approved TEXT,
+    impact factor TEXT,
     pdfUrl TEXT
 );

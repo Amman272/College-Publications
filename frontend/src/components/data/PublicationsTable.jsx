@@ -18,7 +18,7 @@ const PublicationsTable = ({ showActions = false }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({});
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   // Deletion state
@@ -27,29 +27,10 @@ const PublicationsTable = ({ showActions = false }) => {
   // Edit state
   const [editItem, setEditItem] = useState(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  // Admin emails - hardcoded for frontend check (backend also verifies)
-  // const adminEmails = ["ammanfawaz272@gmail.com"];
-  // const isAdmin = isAuthenticated && user && adminEmails.includes(user.userEmail);
-  async function checkAdminStatus() {
-    if (!isAuthenticated) {
-      setIsAdmin(false);
-      return;
-    }
-    try {
-      const response = await api.post("/form/isAdmin");
-      // The response structure is { isAdmin: boolean }
-      setIsAdmin(response.data.isAdmin);
-      console.log("admin logged in")
-    } catch (err) {
-      console.error("Failed to check admin status:", err);
-      setIsAdmin(false);
-    }
-  }
+
   useEffect(() => {
-    checkAdminStatus();
     fetchData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isAdmin]);
 
   const fetchData = async () => {
     try {
@@ -105,14 +86,18 @@ const PublicationsTable = ({ showActions = false }) => {
     { key: "title", label: "Title", minWidth: "250px" },
     { key: "dept", label: "Dept", minWidth: "100px" },
     { key: "coauthors", label: "Co-Authors", minWidth: "200px" },
-    { key: "journal", label: "Journal", minWidth: "180px" },
-    { key: "publisher", label: "Publisher", minWidth: "150px" },
+    { key: "journal", label: "Journal", minWidth: "200px" },
+    { key: "publisher", label: "Publisher", minWidth: "180px" },
     { key: "year", label: "Year", minWidth: "80px" },
-    { key: "vol", label: "Vol", minWidth: "80px" },
-    { key: "issueNo", label: "Issue", minWidth: "80px" },
+    { key: "vol", label: "Vol", minWidth: "60px" },
+    { key: "issueNo", label: "Issue", minWidth: "60px" },
     { key: "pages", label: "Pages", minWidth: "100px" },
     { key: "indexation", label: "Index", minWidth: "120px" },
-    { key: "pdfUrl", label: "Link", isLink: true, minWidth: "80px" },
+    { key: "issnNo", label: "ISSN", minWidth: "100px" },
+    { key: "journalLink", label: "Journal Link", isLink: true, minWidth: "120px" },
+    { key: "ugcApproved", label: "UGC", minWidth: "80px" },
+    { key: "impactFactor", label: "Impact", minWidth: "80px" },
+    { key: "pdfUrl", label: "PDF", isLink: true, minWidth: "80px" },
   ];
 
   const handleFilterChange = (key, value) => {
@@ -153,7 +138,7 @@ const PublicationsTable = ({ showActions = false }) => {
         className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full"
       >
         <div className="overflow-x-auto flex-1">
-          <table className="w-full text-sm text-left whitespace-nowrap">
+          <table className="w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-xs border-b border-slate-200 sticky top-0 z-10 shadow-sm">
               <tr>
                 {columns.map((col) => (
@@ -201,32 +186,31 @@ const PublicationsTable = ({ showActions = false }) => {
                         key={`${row.id}-${col.key}`}
                         className="p-3 text-slate-700"
                       >
-                        {col.isLink ? (
-                          row[col.key] ? (
-                            <a
-                              href={row[col.key]}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:text-indigo-700 font-medium inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 rounded-md hover:bg-indigo-100 transition-colors"
-                            >
-                              <FileText size={14} /> View
-                            </a>
-                          ) : (
-                            <span className="text-slate-300 ml-2">-</span>
-                          )
-                        ) : (
-                          <div
-                            className="truncate"
-                            title={row[col.key]}
-                            style={{ maxWidth: col.minWidth }}
+                      {col.isLink ? (
+                        row[col.key] ? (
+                          <a
+                            href={row[col.key]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-indigo-700 font-medium inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 rounded-md hover:bg-indigo-100 transition-colors"
                           >
-                            {row[col.key] || (
-                              <span className="text-slate-300">-</span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                    ))}
+                            <FileText size={14} /> View
+                          </a>
+                        ) : (
+                          <span className="text-slate-300 ml-2">-</span>
+                        )
+                      ) : (
+                        <div
+                          className="whitespace-normal break-words"
+                          style={{ minWidth: col.minWidth, maxWidth: "300px" }}
+                        >
+                          {row[col.key] || (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  ))}
                     {(showActions || isAuthenticated) && (
                       <td className="p-3 text-center sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-5px_0_10px_-5px_rgb(0,0,0,0.05)] border-l border-transparent z-10">
                         <div className="flex items-center justify-center gap-1">
