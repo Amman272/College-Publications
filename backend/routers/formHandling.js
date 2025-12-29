@@ -54,8 +54,15 @@ router.post("/formEntry", verifyToken, (req, res) => {
     impactFactor,
     pdfUrl,
   } = req.body;
+  
 
   try {
+    // Check for duplicate title
+    const existing = db.prepare("SELECT 1 FROM publications WHERE title = ? COLLATE NOCASE").get(title);
+    if (existing) {
+      return res.status(409).json({ message: "Duplicate entry: Publication with this title already exists." });
+    }
+
     db.prepare(
       `INSERT INTO publications 
   (mainAuthor, title, email, phone, dept, coauthors, journal, publisher, year, vol, issueNo, pages, indexation, issnNo, journalLink, ugcApproved, impactFactor, pdfUrl)

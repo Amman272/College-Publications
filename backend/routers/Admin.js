@@ -38,6 +38,10 @@ router.post("/deleteAdmin", verifyToken, (req, res) => {
   if (!isAdmin(req.user.userEmail)) {
     return res.status(403).json({ message: "You are not an admin" });
   }
+
+  if (deleteEmail.trim().toLowerCase() === req.user.userEmail.trim().toLowerCase()) {
+    return res.status(400).json({ message: "You cannot remove yourself as an admin." });
+  }
   try {
     const info = db.prepare("DELETE FROM admins WHERE EMAIL=? COLLATE NOCASE").run(deleteEmail);
     if (info.changes === 0) {

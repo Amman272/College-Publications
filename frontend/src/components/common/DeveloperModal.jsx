@@ -4,7 +4,7 @@ import { X, Code, Mail } from 'lucide-react';
 const DeveloperModal = ({ isOpen, onClose }) => {
   return (
     <AnimatePresence>
-      {isOpen && (
+      {/* {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
@@ -53,7 +53,7 @@ const DeveloperModal = ({ isOpen, onClose }) => {
              </button>
           </motion.div>
         </div>
-      )}
+      )} */}
     </AnimatePresence>
   );
 };
