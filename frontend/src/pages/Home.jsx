@@ -4,9 +4,14 @@ import { Download } from 'lucide-react';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
 import PublicationsTable from '../components/data/PublicationsTable';
+import LoginModal from '../components/auth/LoginModal';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
-const [isAdminPopup, setIsAdminPopup] = useState(false);
+const [isLoginOpen, setIsLoginOpen] = useState(false);
+const { isAuthenticated } = useAuth();
+const navigate = useNavigate();
   
   return (
     <div className="min-h-screen flex flex-col bg-[--background]">
@@ -39,9 +44,18 @@ const [isAdminPopup, setIsAdminPopup] = useState(false);
              <a href="#publications" className="btn btn-primary px-6 py-3 text-base">
                 View Publications
              </a>
-             <a href="/upload" className="btn btn-outline px-6 py-3 text-base bg-white">
+             <button 
+               onClick={() => {
+                 if (isAuthenticated) {
+                   navigate('/upload');
+                 } else {
+                   setIsLoginOpen(true);
+                 }
+               }}
+               className="btn btn-outline px-6 py-3 text-base bg-white"
+             >
                 Delete / Manage Entries
-             </a>
+             </button>
           </motion.div>
           <motion.p 
             initial={{ opacity: 0 }}
@@ -73,6 +87,10 @@ const [isAdminPopup, setIsAdminPopup] = useState(false);
       </main>
 
       <Footer />
+      <LoginModal 
+        isOpen={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
+      />
     </div>
   );
 };

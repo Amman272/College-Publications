@@ -21,6 +21,10 @@ const PublicationsTable = ({ showActions = false }) => {
   const { user, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   // Deletion state
   const [deleteId, setDeleteId] = useState(null);
 
@@ -105,6 +109,7 @@ const PublicationsTable = ({ showActions = false }) => {
       ...prev,
       [key]: value,
     }));
+    setCurrentPage(1); // Reset to first page on filter change
   };
 
   const filteredData = useMemo(() => {
@@ -116,6 +121,14 @@ const PublicationsTable = ({ showActions = false }) => {
       });
     });
   }, [data, filters]);
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (loading) {
     return (
@@ -175,8 +188,8 @@ const PublicationsTable = ({ showActions = false }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredData.length > 0 ? (
-                filteredData.map((row) => (
+              {currentItems.length > 0 ? (
+                currentItems.map((row) => (
                   <tr
                     key={row.id}
                     className="hover:bg-slate-50 transition-colors group"
@@ -257,9 +270,78 @@ const PublicationsTable = ({ showActions = false }) => {
           </table>
         </div>
 
-        <div className="p-3 border-t border-slate-200 bg-slate-50 text-[10px] sm:text-xs text-slate-400 flex justify-between items-center shrink-0">
-          <span>Showing {filteredData.length} records</span>
-          <span>Total: {data.length}</span>
+        {/* Pagination & Footer */}
+        <div className="p-3 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
+            <div className="flex items-center gap-4 text-[10px] sm:text-xs text-slate-500">
+               <div className="flex items-center gap-2">
+                  <span>Rows per page:</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    {[10, 25, 50, 100].map(size => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
+                  </select>
+               </div>
+               <span>
+                  Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} records
+               </span>
+            </div>
+            
+            {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => paginate(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-xs font-medium rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-colors"
+                    >
+                        Previous
+                    </button>
+                    
+                    <div className="flex gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            // Logic to show pages around current page
+                            let pageNum;
+                            if (totalPages <= 5) {
+                                pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                                pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                                pageNum = totalPages - 4 + i;
+                            } else {
+                                pageNum = currentPage - 2 + i;
+                            }
+
+                            return (
+                                <button
+                                    key={pageNum}
+                                    onClick={() => paginate(pageNum)}
+                                    className={`w-8 h-8 flex items-center justify-center text-xs font-medium rounded-md border transition-colors ${
+                                        currentPage === pageNum
+                                            ? "bg-primary text-white border-primary"
+                                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                                    }`}
+                                >
+                                    {pageNum}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <button
+                        onClick={() => paginate(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-xs font-medium rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-colors"
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
       </motion.div>
 

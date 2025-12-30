@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Save, CloudUpload, Edit } from 'lucide-react';
+import { Save, CloudUpload, Edit } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../../api/axios';
 
@@ -16,7 +16,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
     coauthors: '',
     journal: '',
     publisher: '',
-    year: '',
+    year: '2005',
     vol: '',
     issueNo: '',
     pages: '',
@@ -255,7 +255,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
           className="w-full btn btn-primary py-3 rounded-lg text-sm transition-all"
         >
           {loading ? (
-             <Loader2 className="animate-spin" size={20} />
+             'Loading...'
           ) : (
             <>{initialData ? <Edit size={18} /> : <Save size={18} />} {initialData ? 'Update Publication' : 'Save Record'}</>
           )}

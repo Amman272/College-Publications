@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, Loader2, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios';
 
@@ -154,7 +154,7 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
                       htmlFor="bulk-import-modal-input"
                       className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 text-indigo-600 font-medium hover:bg-indigo-50 hover:border-indigo-300 w-full cursor-pointer transition-all ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      {loading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
+                      {!loading && <Upload size={20} />}
                       {loading ? 'Processing...' : 'Click to Upload Excel File'}
                     </label>
                 </div>
