@@ -25,13 +25,25 @@ const isAdmin = (email) => {
 router.post("/isAdmin", verifyToken,(req,res)=>{
   try {
     const email = req.user.userEmail;
+    console.log(`[DEBUG] /isAdmin check for: '${email}'`);
     const user = db.prepare("select 1 from admins WHERE EMAIL = ? COLLATE NOCASE").get(email);
+    console.log(`[DEBUG] /isAdmin DB result:`, user);
     return res.status(200).json({isAdmin: !!user });
   } catch (err) {
     console.error("/isAdmin route failed:", err);
-    return res.status(500).json({ message: "Internal server error", error: err.message });
+    return res.status(500).json({ message: "Internal server error", error: err.message, stack: err.stack });
   }
 });
+
+const logAction = (userEmail, action, details) => {
+  try {
+    db.prepare("INSERT INTO audit_logs (user_email, action, details) VALUES (?, ?, ?)").run(userEmail, action, details);
+  } catch (err) {
+    console.error("Failed to log action:", err);
+  }
+};
+
+
 
 router.post("/formEntry", verifyToken, (req, res) => {
   const {
@@ -87,6 +99,8 @@ router.post("/formEntry", verifyToken, (req, res) => {
       impactFactor,
       pdfUrl
     );
+
+    logAction(req.user.userEmail, "CREATE", `Created publication: ${title}`);
     return res.status(200).json({ message: "data stored suceessfully" });
   } catch (e) {
     console.log(e);
@@ -171,6 +185,8 @@ router.put("/formEntryBatchUpdate", verifyToken, (req, res) => {
     // 3. Execute updates
     updateMany(updates);
 
+    logAction(req.user.userEmail, "BATCH_UPDATE", `Batch updated ${updates.length} entries`);
+
     return res
       .status(200)
       .json({ message: "Batch update successful", count: updates.length });
@@ -249,6 +265,7 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
         id
       );
 
+    logAction(userEmail, "UPDATE", `Updated publication ID: ${id}`);
     return res.status(200).json({ message: "Data updated successfully" });
   } catch (e) {
     console.log(e);
@@ -278,6 +295,8 @@ console.log(userEmail);
 
     // 2. Delete
     const info = db.prepare("DELETE FROM publications WHERE id = ?").run(id);
+
+    logAction(userEmail, "DELETE", `Deleted publication ID: ${id}`);
 
     return res
       .status(200)

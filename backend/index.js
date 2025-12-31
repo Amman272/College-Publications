@@ -22,6 +22,8 @@ try {
   if (!row) {
     db.prepare("INSERT INTO admins (EMAIL) VALUES (?)").run(adminEmail);
     console.log(`Seeded admin: ${adminEmail}`);
+  } else {
+    console.log(`Admin exists: ${adminEmail}`);
   }
 } catch (e) {
   console.error("Failed to seed admin:", e);

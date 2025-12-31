@@ -54,4 +54,54 @@ router.post("/deleteAdmin", verifyToken, (req, res) => {
   }
 });
 
+const logAction = (userEmail, action, details) => {
+  try {
+    db.prepare("INSERT INTO audit_logs (user_email, action, details) VALUES (?, ?, ?)").run(userEmail, action, details);
+  } catch (err) {
+    console.error("Failed to log action:", err);
+  }
+};
+
+router.get("/logs", verifyToken, (req, res) => {
+  const email = req.user.userEmail;
+  if (!isAdmin(email)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+  
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  try {
+    const logs = db.prepare("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT ? OFFSET ?").all(limit, offset);
+    const countResult = db.prepare("SELECT COUNT(*) as count FROM audit_logs").get();
+    const totalLogs = countResult.count;
+    
+    return res.json({
+      logs,
+      total: totalLogs,
+      page,
+      totalPages: Math.ceil(totalLogs / limit)
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Failed to fetch logs" });
+  }
+});
+
+router.post("/deleteAll", verifyToken, (req, res) => {
+  const email = req.user.userEmail;
+  if (!isAdmin(email)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+  try {
+    db.prepare("DELETE FROM publications").run();
+    logAction(email, "DELETE_ALL", "Deleted all publications");
+    return res.status(200).json({ message: "All publications deleted" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Failed to delete all" });
+  }
+});
+
 export default router;

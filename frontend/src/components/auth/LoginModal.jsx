@@ -113,6 +113,13 @@ const LoginModal = ({ isOpen, onClose }) => {
                     
                     {loading ? <Loader2 className="animate-spin" /> : <>Get OTP <ArrowRight size={18} /></>}
                   </button>
+                  <button 
+                    type="button"
+                    onClick={onClose}
+                    className="w-full text-center text-sm text-[--text-secondary] hover:text-primary mt-2 transition-colors"
+                  >
+                    Close
+                  </button>
                 </form>
               ) : (
                 <form onSubmit={handleOtpSubmit} className="space-y-4">
@@ -151,6 +158,13 @@ const LoginModal = ({ isOpen, onClose }) => {
                     className="w-full text-center text-sm text-[--text-secondary] hover:text-[--primary] transition-colors"
                   >
                     Change email
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={onClose}
+                    className="w-full text-center text-sm text-[--text-secondary] hover:text-primary mt-2 transition-colors"
+                  >
+                    Close
                   </button>
                 </form>
               )}

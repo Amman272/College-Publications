@@ -12,33 +12,34 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for token on mount
-    const token = localStorage.getItem('token');
-    if (token) {
-        try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+          try {
+              const base64Url = token.split('.')[1];
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+              }).join(''));
 
-            const decoded = JSON.parse(jsonPayload);
-            setUser(decoded); // { userEmail: ... }
-            setIsAuthenticated(true);
-            checkAdminStatus(token);
-        } catch (e) {
-            console.error("Invalid token", e);
-            localStorage.removeItem('token');
-        }
-    }
-    setLoading(false);
+              const decoded = JSON.parse(jsonPayload);
+              setUser(decoded); // { userEmail: ... }
+              setIsAuthenticated(true);
+              await checkAdminStatus(token);
+          } catch (e) {
+              console.error("Invalid token", e);
+              localStorage.removeItem('token');
+          }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const checkAdminStatus = async (token) => {
     try {
-      const response = await api.post("/form/isAdmin", {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.post("/form/isAdmin", {});
       console.log("Admin Check Response:", response.data);
       setIsAdmin(response.data.isAdmin);
     } catch (error) {
