@@ -84,6 +84,11 @@ graph TD
     Backend --> AuthMiddleware
     AuthMiddleware --> Router
     Router --> Controller
+    
+    Controller -->|SQL Queries| DB[(SQLite Database)]
+    DB -->|Rows| Controller
+    Controller -->|JSON Response| Frontend
+```
 
 ## 4. Backend Architecture & Function Breakdown
 
