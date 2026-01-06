@@ -22,6 +22,21 @@ const isAdmin = (email) => {
   }
 };
 
+const validateInputs = (email, phone) => {
+  const acceptedDomains = process.env.ACCEPTED_DOMAINS ? process.env.ACCEPTED_DOMAINS.split(',').map(d => d.trim().toLowerCase()) : [];
+  const emailDomain = email.substring(email.lastIndexOf("@")).toLowerCase();
+  
+  if (acceptedDomains.length > 0 && !acceptedDomains.includes(emailDomain)) {
+    throw new Error(`Email domain ${emailDomain} is not allowed. Accepted: ${acceptedDomains.join(', ')}`);
+  }
+
+  const phoneDigits = String(phone).replace(/\D/g, '');
+  if (phoneDigits.length !== 10) {
+    throw new Error("Phone number must be exactly 10 digits.");
+  }
+  return phoneDigits;
+};
+
 router.post("/isAdmin", verifyToken,(req,res)=>{
   try {
     const email = req.user.userEmail;
@@ -69,6 +84,9 @@ router.post("/formEntry", verifyToken, (req, res) => {
   
 
   try {
+    // Validate inputs
+    const validatedPhone = validateInputs(email, phone);
+
     // Check for duplicate title
     const existing = db.prepare("SELECT 1 FROM publications WHERE title = ? COLLATE NOCASE").get(title);
     if (existing) {
@@ -83,7 +101,7 @@ router.post("/formEntry", verifyToken, (req, res) => {
       mainAuthor,
       title,
       email,
-      phone,
+      validatedPhone,
       dept,
       coauthors,
       journal,
@@ -100,11 +118,11 @@ router.post("/formEntry", verifyToken, (req, res) => {
       pdfUrl
     );
 
-    logAction(req.user.userEmail, "CREATE", `Created publication: ${title}`);
+    logAction(req.user.userEmail, "CREATE", `Added publication: ${title}`);
     return res.status(200).json({ message: "data stored suceessfully" });
   } catch (e) {
     console.log(e);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(400).json({ message: e.message || "Internal server error" });
   }
 });
 
@@ -237,6 +255,9 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
         .json({ message: "You are not authorized to edit this entry" });
     }
 
+    // Validate inputs
+    const validatedPhone = validateInputs(email, phone);
+
     const info = db
       .prepare(
         `UPDATE publications 
@@ -247,7 +268,7 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
         mainAuthor,
         title,
         email,
-        phone,
+        validatedPhone,
         dept,
         coauthors,
         journal,
@@ -269,7 +290,7 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
     return res.status(200).json({ message: "Data updated successfully" });
   } catch (e) {
     console.log(e);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(400).json({ message: e.message || "Internal server error" });
   }
 });
 

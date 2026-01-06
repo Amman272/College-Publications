@@ -69,10 +69,22 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
                     pdfUrl: row['PDF URL'] || row['pdfUrl'] || ''
                 };
 
-                if (!payload.email || !payload.email.toLowerCase().endsWith('@nriit.edu.in')) {
-                    console.error(`Email validation failed for: ${payload.email}`);
-                    throw new Error(`Invalid email domain: ${payload.email}. Only @nriit.edu.in is allowed.`);
+                // Domain validation from .env
+                const acceptedDomains = import.meta.env.VITE_ACCEPTED_DOMAINS 
+                  ? import.meta.env.VITE_ACCEPTED_DOMAINS.split(',').map(d => d.trim().toLowerCase()) 
+                  : [];
+                const emailDomain = payload.email.substring(payload.email.lastIndexOf("@")).toLowerCase();
+
+                if (acceptedDomains.length > 0 && !acceptedDomains.includes(emailDomain)) {
+                    throw new Error(`Invalid email domain: ${emailDomain}. Accepted: ${acceptedDomains.join(', ')}`);
                 }
+
+                // Phone number validation
+                const phoneDigits = String(payload.phone).replace(/\D/g, '');
+                if (phoneDigits.length !== 10) {
+                    throw new Error(`Invalid phone number: ${payload.phone}. Must be exactly 10 digits.`);
+                }
+                payload.phone = phoneDigits;
 
                 await api.post('/form/formEntry', payload);
                 successCount++;
@@ -87,6 +99,7 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
         
         if (newErrors.length > 0) {
             setErrors(newErrors.slice(0, 5)); // Show top 5 errors
+            alert(`Bulk import completed with ${failCount} failures. Please check the error log below.`);
         }
 
         if (successCount > 0 && onSuccess) {

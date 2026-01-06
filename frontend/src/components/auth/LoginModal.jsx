@@ -21,7 +21,9 @@ const LoginModal = ({ isOpen, onClose }) => {
       await api.post('/login/otpSend', { email });
       setStep(2);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP');
+      const errorMsg = err.response?.data?.message || 'Failed to send OTP';
+      setError(errorMsg);
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,9 @@ const LoginModal = ({ isOpen, onClose }) => {
         setOtp('');
       }, 300);
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid OTP');
+      const errorMsg = err.response?.data?.message || 'Invalid OTP';
+      setError(errorMsg);
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
