@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios';
 
@@ -8,7 +10,85 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ total: 0, success: 0, failed: 0 });
   const [errors, setErrors] = useState([]);
+  const [resultData, setResultData] = useState([]);
   const fileInputRef = useRef(null);
+
+  const generateResultExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Import Results');
+
+    // Define headers
+    const headers = [
+      'Row #', 'Status', 'Error Message', 'Main Author', 'Title', 'Email', 'Phone',
+      'Dept', 'Co-Authors', 'Journal', 'Publisher', 'Year', 'Volume', 'Issue No',
+      'Pages', 'Indexation', 'ISSN No', 'Journal Link', 'UGC Approved',
+      'Impact Factor', 'PDF URL'
+    ];
+
+    // Add header row with styling
+    const headerRow = worksheet.addRow(headers);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' }
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Add data rows
+    resultData.forEach((result) => {
+      const row = worksheet.addRow([
+        result.rowNumber,
+        result.status === 'success' ? '✅ SUCCESS' : '❌ FAILED',
+        result.error || '',
+        result.data['Main Author'] || result.data['mainAuthor'] || '',
+        result.data['Title'] || result.data['title'] || '',
+        result.data['Email'] || result.data['email'] || '',
+        result.data['Phone'] || result.data['phone'] || '',
+        result.data['Dept'] || result.data['dept'] || '',
+        result.data['Co-Authors'] || result.data['Coauthors'] || result.data['coauthors'] || '',
+        result.data['Journal'] || result.data['journal'] || '',
+        result.data['Publisher'] || result.data['publisher'] || '',
+        result.data['Year'] || result.data['year'] || '',
+        result.data['Volume'] || result.data['vol'] || '',
+        result.data['Issue No'] || result.data['issueNo'] || '',
+        result.data['Pages'] || result.data['pages'] || '',
+        result.data['Indexation'] || result.data['indexation'] || '',
+        result.data['ISSN No'] || result.data['issnNo'] || '',
+        result.data['Journal Link'] || result.data['journalLink'] || '',
+        result.data['UGC Approved'] || result.data['ugcApproved'] || '',
+        result.data['Impact Factor'] || result.data['impactFactor'] || '',
+        result.data['PDF URL'] || result.data['pdfUrl'] || ''
+      ]);
+
+      // Color code the row
+      if (result.status === 'success') {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFC6EFCE' } // Light green
+        };
+      } else {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFC7CE' } // Light red
+        };
+      }
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      column.width = 15;
+    });
+    worksheet.getColumn(2).width = 12; // Status
+    worksheet.getColumn(3).width = 30; // Error Message
+
+    // Generate and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `import-results-${new Date().getTime()}.xlsx`);
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -17,6 +97,7 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
     setLoading(true);
     setStats({ total: 0, success: 0, failed: 0 });
     setErrors([]);
+    setResultData([]);
 
     const reader = new FileReader();
     reader.onload = async (evt) => {
@@ -36,9 +117,12 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
         let successCount = 0;
         let failCount = 0;
         const newErrors = [];
+        const results = [];
 
         for (let i = 0; i < data.length; i++) {
           const row = data[i];
+          const rowNumber = i + 2; // +2 because Excel is 1-indexed and we skip header
+
           try {
             const rawEmail = row['Email'] || row['email'] || '';
             const email = String(rawEmail).trim();
@@ -47,17 +131,14 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
 
             // Simple phone validation - Indian mobile numbers only
             if (phone) {
-              // Rule 1: Must be exactly 10 digits
               if (phone.length !== 10) {
                 throw new Error('Invalid phone number');
               }
 
-              // Rule 2: Must contain only numbers (no letters, spaces, or special characters)
               if (!/^\d+$/.test(phone)) {
                 throw new Error('Invalid phone number');
               }
 
-              // Rule 3: First digit must be 6, 7, 8, or 9 (Indian mobile numbers only)
               if (phone[0] !== '6' && phone[0] !== '7' && phone[0] !== '8' && phone[0] !== '9') {
                 throw new Error('Invalid phone number');
               }
@@ -100,19 +181,40 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
               pdfUrl: row['PDF URL'] || row['pdfUrl'] || ''
             };
 
+            // Email domain validation
             if (!payload.email || !payload.email.toLowerCase().endsWith('@nriit.edu.in')) {
               throw new Error(`Invalid email domain: ${payload.email}. Only @nriit.edu.in is allowed.`);
             }
 
             await api.post('/form/formEntry', payload);
             successCount++;
+
+            // Track success
+            results.push({
+              rowNumber,
+              status: 'success',
+              data: row,
+              error: null
+            });
+
           } catch (err) {
             failCount++;
-            newErrors.push(`Row ${i + 2}: ${err.response?.data?.message || err.message || 'Upload failed'}`);
+            const errorMsg = err.response?.data?.message || err.message || 'Upload failed';
+            newErrors.push(`Row ${rowNumber}: ${errorMsg}`);
+
+            // Track failure
+            results.push({
+              rowNumber,
+              status: 'failed',
+              data: row,
+              error: errorMsg
+            });
           }
 
           setStats({ total: data.length, success: successCount, failed: failCount });
         }
+
+        setResultData(results);
 
         if (newErrors.length > 0) {
           setErrors(newErrors.slice(0, 5));
@@ -216,10 +318,26 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
 
                   {errors.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-slate-200">
-                      <p className="text-xs font-semibold text-red-500 mb-1">Errors:</p>
+                      <p className="text-xs font-semibold text-red-500 mb-1">Errors (showing first 5):</p>
                       <ul className="text-xs text-red-400 space-y-1 max-h-24 overflow-y-auto">
                         {errors.map((e, i) => <li key={i}>{e}</li>)}
                       </ul>
+                    </div>
+                  )}
+
+                  {/* Download Result Button */}
+                  {resultData.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-slate-200">
+                      <button
+                        onClick={generateResultExcel}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
+                      >
+                        <Download size={18} />
+                        Download Result Report
+                      </button>
+                      <p className="text-[10px] text-slate-500 mt-2 text-center italic">
+                        Green rows = Success | Red rows = Failed
+                      </p>
                     </div>
                   )}
                 </div>
