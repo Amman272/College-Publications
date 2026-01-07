@@ -44,6 +44,7 @@ const initDb = async () => {
         await connection.query(`
             CREATE TABLE IF NOT EXISTS publications (
                 id INT AUTO_INCREMENT PRIMARY KEY,
+                publicationType TEXT,
                 mainAuthor TEXT,
                 title TEXT,
                 email TEXT,

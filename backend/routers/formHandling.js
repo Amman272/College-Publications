@@ -48,6 +48,7 @@ const logAction = async (userEmail, action, details) => {
 
 router.post("/formEntry", verifyToken, async (req, res) => {
   const {
+    publicationType,
     mainAuthor,
     title,
     email,
@@ -78,9 +79,10 @@ router.post("/formEntry", verifyToken, async (req, res) => {
 
     await db.query(
       `INSERT INTO publications 
-  (mainAuthor, title, email, phone, dept, coauthors, journal, publisher, year, vol, issueNo, pages, indexation, issnNo, journalLink, ugcApproved, impactFactor, pdfUrl)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  (publicationType, mainAuthor, title, email, phone, dept, coauthors, journal, publisher, year, vol, issueNo, pages, indexation, issnNo, journalLink, ugcApproved, impactFactor, pdfUrl)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        publicationType,
         mainAuthor,
         title,
         email,
@@ -139,6 +141,7 @@ router.put("/formEntryBatchUpdate", verifyToken, async (req, res) => {
     const query = `
       UPDATE publications
       SET 
+        publicationType = COALESCE(?, publicationType),
         mainAuthor = COALESCE(?, mainAuthor),
         title = COALESCE(?, title),
         email = COALESCE(?, email),
@@ -162,6 +165,7 @@ router.put("/formEntryBatchUpdate", verifyToken, async (req, res) => {
 
     for (const row of updates) {
       await connection.query(query, [
+        row.publicationType ?? null,
         row.mainAuthor ?? null,
         row.title ?? null,
         row.email ?? null,
@@ -202,6 +206,7 @@ router.put("/formEntryBatchUpdate", verifyToken, async (req, res) => {
 router.put("/formEntryUpdate", verifyToken, async (req, res) => {
   const {
     id,
+    publicationType,
     mainAuthor,
     title,
     email,
@@ -242,9 +247,10 @@ router.put("/formEntryUpdate", verifyToken, async (req, res) => {
 
     await db.query(
       `UPDATE publications 
-      SET mainAuthor = ?, title = ?, email = ?, phone = ?, dept = ?, coauthors = ?, journal = ?, publisher = ?, year = ?, vol = ?, issueNo = ?, pages = ?, indexation = ?, issnNo = ?, journalLink = ?, ugcApproved = ?, impactFactor = ?, pdfUrl = ?
+      SET publicationType = ?, mainAuthor = ?, title = ?, email = ?, phone = ?, dept = ?, coauthors = ?, journal = ?, publisher = ?, year = ?, vol = ?, issueNo = ?, pages = ?, indexation = ?, issnNo = ?, journalLink = ?, ugcApproved = ?, impactFactor = ?, pdfUrl = ?
       WHERE id = ?`,
       [
+        publicationType,
         mainAuthor,
         title,
         email,
@@ -344,6 +350,7 @@ router.get("/downloadExcel", async (req, res) => {
     // 2. Define Headers & Widths manually
     const columns = [
       { header: "ID", key: "id", width: 10 },
+      { header: "Publication Type", key: "publicationType", width: 25 },
       { header: "Main Author", key: "mainAuthor", width: 25 },
       { header: "Title", key: "title", width: 40 },
       { header: "Email", key: "email", width: 30 },
@@ -451,6 +458,7 @@ router.get("/downloadTemplate", async (req, res) => {
     // 2. Define Headers & Widths manually
     const columns = [
       { header: "ID", width: 10 },
+      { header: "Publication Type", width: 25 },
       { header: "Main Author", width: 25 },
       { header: "Title", width: 40 },
       { header: "Email", width: 30 },

@@ -9,6 +9,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
   const [msg, setMsg] = useState({ type: '', text: '' });
 
   const initialForm = {
+    publicationType: '',
     mainAuthor: '',
     title: '',
     email: '',
@@ -307,6 +308,24 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
         </h3>
 
         <div className="space-y-4">
+          <div>
+            <label className={labelClass}>
+              <FileText size={16} className="text-green-500" />
+              Publication Type *
+            </label>
+            <select
+              required
+              name="publicationType"
+              value={formData.publicationType || ''}
+              onChange={handleChange}
+              className={inputClass}
+            >
+              <option value="">Select Publication Type</option>
+              <option value="Journal Paper">Journal Paper</option>
+              <option value="Conference Proceedings">Conference Proceedings</option>
+            </select>
+          </div>
+
           <div>
             <label className={labelClass}>
               <FileText size={16} className="text-green-500" />

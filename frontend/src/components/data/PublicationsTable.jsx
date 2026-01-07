@@ -100,6 +100,7 @@ const PublicationsTable = ({ showActions = false }) => {
 
   const columns = [
     { key: "mainAuthor", label: "Main Author", minWidth: "180px" },
+    { key: "publicationType", label: "Publication Type", minWidth: "180px" },
     { key: "title", label: "Title", minWidth: "250px" },
     { key: "email", label: "Email", minWidth: "150px" },
     { key: "dept", label: "Dept", minWidth: "100px" },

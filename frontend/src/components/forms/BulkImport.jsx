@@ -63,7 +63,7 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
 
     // Define headers
     const headers = [
-      'Row #', 'Status', 'Error Message', 'Main Author', 'Title', 'Email', 'Phone',
+      'Row #', 'Status', 'Error Message', 'Publication Type', 'Main Author', 'Title', 'Email', 'Phone',
       'Dept', 'Co-Authors', 'Journal', 'Publisher', 'Year', 'Volume', 'Issue No',
       'Pages', 'Indexation', 'ISSN No', 'Journal Link', 'UGC Approved',
       'Impact Factor', 'PDF URL'
@@ -85,6 +85,7 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
         result.rowNumber,
         result.status === 'success' ? '✅ SUCCESS' : '❌ FAILED',
         result.error || '',
+        result.data['Publication Type'] || result.data['publicationType'] || '',
         result.data['Main Author'] || result.data['mainAuthor'] || '',
         result.data['Title'] || result.data['title'] || '',
         result.data['Email'] || result.data['email'] || '',
@@ -221,6 +222,7 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
             }
 
             const payload = {
+              publicationType: row['Publication Type'] || row['publicationType'] || '',
               mainAuthor: row['Main Author'] || row['mainAuthor'] || '',
               title: row['Title'] || row['title'] || '',
               email: email,
