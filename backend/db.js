@@ -1,5 +1,31 @@
 import mysql from 'mysql2/promise';
 
+// First, create a connection without specifying a database to check/create it
+const createDatabaseIfNotExists = async () => {
+    try {
+        // Connect without specifying database
+        const connection = await mysql.createConnection({
+            host: process.env.DB_HOST || 'localhost',
+            user: process.env.DB_USER || 'root',
+            password: process.env.DB_PASSWORD
+        });
+
+        const dbName = process.env.DB_NAME || 'nri_portal';
+
+        // Create database if it doesn't exist
+        await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
+        console.log(`✅ Database '${dbName}' is ready`);
+
+        await connection.end();
+    } catch (error) {
+        console.error('❌ Error creating database:', error.message);
+        throw error;
+    }
+};
+
+// Create database first, then create pool
+await createDatabaseIfNotExists();
+
 export const db = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
@@ -13,7 +39,7 @@ export const db = mysql.createPool({
 const initDb = async () => {
     try {
         const connection = await db.getConnection();
-        console.log('Connected to MySQL database');
+        console.log('✅ Connected to MySQL database');
 
         await connection.query(`
             CREATE TABLE IF NOT EXISTS publications (
@@ -58,9 +84,9 @@ const initDb = async () => {
         `);
 
         connection.release();
-        console.log('Database tables initialized');
+        console.log('✅ Database tables initialized successfully');
     } catch (error) {
-        console.error('Error initializing database:', error);
+        console.error('❌ Error initializing database tables:', error.message);
     }
 };
 
