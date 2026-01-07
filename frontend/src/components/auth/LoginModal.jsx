@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { isValidEmailDomain, getEmailDomainError } from '../../config/constants';
 import api from '../../api/axios';
 
 const LoginModal = ({ isOpen, onClose }) => {
@@ -15,6 +16,12 @@ const LoginModal = ({ isOpen, onClose }) => {
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Validate email domain before making API call
+    if (!isValidEmailDomain(email)) {
+      setError(getEmailDomainError());
+      return;
+    }
 
     setLoading(true);
     try {
@@ -60,7 +67,7 @@ const LoginModal = ({ isOpen, onClose }) => {
             onClick={onClose}
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
-          
+
           <motion.div
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -69,7 +76,7 @@ const LoginModal = ({ isOpen, onClose }) => {
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-[--primary] to-[--secondary] p-6 text-white text-center">
-              <button 
+              <button
                 onClick={onClose}
                 className="absolute top-4 right-4 p-1 hover:bg-white/20 rounded-full transition-colors"
               >
@@ -104,16 +111,16 @@ const LoginModal = ({ isOpen, onClose }) => {
                       />
                     </div>
                   </div>
-                  
+
                   <button
                     type="submit"
                     disabled={loading}
                     className="w-full py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all flex items-center justify-center gap-2"
                   >
-                    
+
                     {loading ? <Loader2 className="animate-spin" /> : <>Get OTP <ArrowRight size={18} /></>}
                   </button>
-                  <button 
+                  <button
                     type="button"
                     onClick={onClose}
                     className="w-full text-center text-sm text-[--text-secondary] hover:text-primary mt-2 transition-colors"
@@ -143,7 +150,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                       />
                     </div>
                   </div>
-                  
+
                   <button
                     type="submit"
                     disabled={loading}
@@ -151,15 +158,15 @@ const LoginModal = ({ isOpen, onClose }) => {
                   >
                     {loading ? <Loader2 className="animate-spin" /> : 'Verify & Login'}
                   </button>
-                  
-                  <button 
+
+                  <button
                     type="button"
                     onClick={() => setStep(1)}
                     className="w-full text-center text-sm text-[--text-secondary] hover:text-[--primary] transition-colors"
                   >
                     Change email
                   </button>
-                  <button 
+                  <button
                     type="button"
                     onClick={onClose}
                     className="w-full text-center text-sm text-[--text-secondary] hover:text-primary mt-2 transition-colors"

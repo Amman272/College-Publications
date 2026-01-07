@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Edit, User, Mail, BookOpen, Building2, Users, FileText, Calendar, Hash, Link, Award, TrendingUp, Globe, CheckCircle2, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { isValidEmailDomain, getEmailDomainError } from '../../config/constants';
 import api from '../../api/axios';
 
 const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
@@ -30,7 +31,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
 
   const [formData, setFormData] = useState(initialForm);
   const [showOtherIndexation, setShowOtherIndexation] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({ phone: '', year: '' });
+  const [validationErrors, setValidationErrors] = useState({ phone: '', year: '', email: '' });
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   // Simple phone validation - Indian mobile numbers only
@@ -76,6 +77,16 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
     return '';
   };
 
+  const validateEmail = (email) => {
+    if (!email || email.trim() === '') return '';
+
+    if (!isValidEmailDomain(email)) {
+      return getEmailDomainError();
+    }
+
+    return '';
+  };
+
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
@@ -109,6 +120,11 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
       setValidationErrors(prev => ({ ...prev, year: error }));
     }
 
+    if (name === 'email') {
+      const error = validateEmail(value);
+      setValidationErrors(prev => ({ ...prev, email: error }));
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -119,9 +135,10 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
 
     const phoneError = validatePhone(formData.phone);
     const yearError = validateYear(formData.year);
+    const emailError = validateEmail(formData.email);
 
-    if (phoneError || yearError) {
-      setValidationErrors({ phone: phoneError, year: yearError });
+    if (phoneError || yearError || emailError) {
+      setValidationErrors({ phone: phoneError, year: yearError, email: emailError });
       setMsg({ type: 'error', text: 'Please fix validation errors before submitting.' });
       setLoading(false);
       return;
@@ -139,7 +156,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
       // Show fixed success popup
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 4000);
-      
+
 
       if (onSuccess) onSuccess();
       if (onClose) setTimeout(onClose, 1000);
@@ -211,9 +228,14 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
                 name="email"
                 value={formData.email || ''}
                 onChange={handleChange}
-                className={inputClass}
+                className={`${inputClass} ${validationErrors.email ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
                 placeholder="john@nriit.edu.in"
               />
+              {validationErrors.email && (
+                <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                  <span className="font-semibold">⚠</span> {validationErrors.email}
+                </p>
+              )}
             </div>
           </div>
 

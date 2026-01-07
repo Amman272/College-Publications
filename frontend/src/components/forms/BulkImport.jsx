@@ -4,6 +4,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { isValidEmailDomain, getEmailDomainError } from '../../config/constants';
 import api from '../../api/axios';
 
 const BulkImport = ({ isOpen, onClose, onSuccess }) => {
@@ -182,8 +183,8 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
             };
 
             // Email domain validation
-            if (!payload.email || !payload.email.toLowerCase().endsWith('@nriit.edu.in')) {
-              throw new Error(`Invalid email domain: ${payload.email}. Only @nriit.edu.in is allowed.`);
+            if (!payload.email || !isValidEmailDomain(payload.email)) {
+              throw new Error(getEmailDomainError());
             }
 
             await api.post('/form/formEntry', payload);

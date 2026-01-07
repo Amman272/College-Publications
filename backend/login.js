@@ -12,17 +12,6 @@ router.post("/otpSend", async (req, res) => {
     let { email } = req.body;
     email = email.toLowerCase();
 
-    // Domain validation
-    const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN;
-    if (allowedDomain && allowedDomain.trim() !== "") {
-      const emailDomain = email.split("@")[1];
-      if (emailDomain !== allowedDomain.trim()) {
-        return res.status(403).json({
-          message: `Only emails from ${allowedDomain} domain are allowed.`
-        });
-      }
-    }
-
     const otp = Math.floor(100000 + Math.random() * 900000);
     // const otp = 0;
     //console.log(otp);
