@@ -1,52 +1,67 @@
-import Database from "better-sqlite3";
+import mysql from 'mysql2/promise';
 
+export const db = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'nri_portal',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
 
-export const db = new Database(process.env.DB_PATH || "nri_portal.db", { timeout: 10000 });
-db.pragma('journal_mode = WAL');
-db.pragma('synchronous = NORMAL');
-db.pragma('temp_store = MEMORY');
+const initDb = async () => {
+    try {
+        const connection = await db.getConnection();
+        console.log('Connected to MySQL database');
 
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS publications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                mainAuthor TEXT,
+                title TEXT,
+                email TEXT,
+                phone TEXT,
+                dept TEXT,
+                coauthors TEXT,
+                journal TEXT,
+                publisher TEXT,
+                year INT,
+                vol TEXT,
+                issueNo TEXT,
+                pages TEXT,
+                indexation TEXT,
+                issnNo TEXT,
+                journalLink TEXT,
+                ugcApproved TEXT,
+                impactFactor TEXT,
+                pdfUrl TEXT
+            )
+        `);
 
-// create table only once when app boots
-db.prepare(`
-CREATE TABLE IF NOT EXISTS publications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    mainAuthor TEXT,
-    title TEXT,
-    email TEXT,
-    phone TEXT,
-    dept TEXT,
-    coauthors TEXT,
-    journal TEXT,
-    publisher TEXT,
-    year INTEGER,
-    vol TEXT,
-    issueNo TEXT,
-    pages TEXT,
-    indexation TEXT,
-    issnNo TEXT,
-    journalLink TEXT,
-    ugcApproved TEXT,
-    impactFactor TEXT,
-    pdfUrl TEXT
-);
-`).run();
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS admins (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                EMAIL VARCHAR(255) UNIQUE NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
 
-// admin table
-db.prepare(`
-    CREATE TABLE IF NOT EXISTS admins(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    EMAIL TEXT UNIQUE NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`).run();
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_email TEXT,
+                action TEXT,
+                details TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
 
-// audit logs table
-db.prepare(`
-    CREATE TABLE IF NOT EXISTS audit_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_email TEXT,
-        action TEXT,
-        details TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    );`).run();
+        connection.release();
+        console.log('Database tables initialized');
+    } catch (error) {
+        console.error('Error initializing database:', error);
+    }
+};
 
-
+initDb();

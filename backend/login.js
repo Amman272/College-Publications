@@ -11,6 +11,18 @@ router.post("/otpSend", async (req, res) => {
   try {
     let { email } = req.body;
     email = email.toLowerCase();
+
+    // Domain validation
+    const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN;
+    if (allowedDomain && allowedDomain.trim() !== "") {
+      const emailDomain = email.split("@")[1];
+      if (emailDomain !== allowedDomain.trim()) {
+        return res.status(403).json({
+          message: `Only emails from ${allowedDomain} domain are allowed.`
+        });
+      }
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000);
     // const otp = 0;
     //console.log(otp);
@@ -137,25 +149,13 @@ router.post("/otpVerify", async (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: "30d",
     });
-   // console.log(token);
+    // console.log(token);
 
     // Log login action
-    // Log login action with retry
-    const maxRetries = 10;
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            db.prepare("INSERT INTO audit_logs (user_email, action, details) VALUES (?, ?, ?)").run(email, "LOGIN", "User logged in via OTP");
-            break; // Success
-        } catch(e) { 
-            console.error(`Login log attempt ${i+1} failed: ${e.code}`);
-            if (e.code === 'SQLITE_BUSY' && i < maxRetries - 1) {
-                // Wait longer: 500ms to 1500ms
-                const wait = Math.floor(Math.random() * 1000) + 500;
-                await new Promise(resolve => setTimeout(resolve, wait));
-            } else {
-                console.error("Login log finally failed", e);
-            }
-        }
+    try {
+      await db.query("INSERT INTO audit_logs (user_email, action, details) VALUES (?, ?, ?)", [email, "LOGIN", "User logged in via OTP"]);
+    } catch (e) {
+      console.error("Login log failed", e);
     }
 
     return res

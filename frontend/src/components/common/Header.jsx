@@ -23,81 +23,81 @@ const Header = () => {
       <header className="sticky top-0 z-40 w-full glass bg-white/80 border-b border-slate-200">
         <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
-             {/* Collage Logo Placeholder */}
-             <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 overflow-hidden shrink-0 text-slate-400">
-                <img src="./../../public/NRI logo.png" alt="" />
-             </div>
+            {/* Collage Logo Placeholder */}
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 overflow-hidden shrink-0 text-slate-400">
+              <img src="/NRI-logo.png" alt="" />
+            </div>
 
-             <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block"></div>
+            <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block"></div>
 
-             <Link to="/" className="flex items-center gap-3 group">
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-tr from-primary to-secondary rounded-lg flex items-center justify-center text-white shadow-lg group-hover:shadow-indigo-500/30 transition-all">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-tr from-primary to-secondary rounded-lg flex items-center justify-center text-white shadow-lg group-hover:shadow-indigo-500/30 transition-all">
                 <BookOpen size={20} className="md:w-6 md:h-6" />
-                </div>
-                <div className="flex flex-col">
+              </div>
+              <div className="flex flex-col">
                 <span className="font-heading font-bold text-sm md:text-lg leading-tight text-slate-900 line-clamp-1">
-                    Publishing Portal
+                  Publishing Portal
                 </span>
                 <span className="text-[10px] md:text-xs text-slate-500 font-medium hidden sm:block">
-                    NRI Institute of Technology
+                  NRI Institute of Technology
                 </span>
-                </div>
+              </div>
             </Link>
           </div>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-4">
 
-  {/* If user is logged in */}
-  {isAuthenticated ? (
-    <>
-      {/* User email pill */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100 mr-2">
-        <User size={14} className="text-slate-400" />
-        <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]">
-          {user?.userEmail}
-        </span>
-      </div>
+            {/* If user is logged in */}
+            {isAuthenticated ? (
+              <>
+                {/* User email pill */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100 mr-2">
+                  <User size={14} className="text-slate-400" />
+                  <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]">
+                    {user?.userEmail}
+                  </span>
+                </div>
 
 
-       {isAdmin && (
-        <Link to="/admin-dashboard" className="btn btn-outline border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-          <Building2 size={18} />
-          Admin Dashboard
-        </Link>
-       )}
+                {isAdmin && (
+                  <Link to="/admin-dashboard" className="btn btn-outline border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+                    <Building2 size={18} />
+                    Admin Dashboard
+                  </Link>
+                )}
 
 
-      {/* Upload button */}
-      <Link to="/upload" className="btn btn-primary">
-        <Upload size={18} />
-        Upload Publication
-      </Link>
+                {/* Upload button */}
+                <Link to="/upload" className="btn btn-primary">
+                  <Upload size={18} />
+                  Upload Publication
+                </Link>
 
-      {/* Logout button */}
-      <button onClick={handleLogout} className="btn btn-outline">
-        <LogOut size={18} />
-        Logout
-      </button>
-      
-    </>
-    
-  ) : (
-    /* If user is NOT logged in */
-    <button
-      onClick={() => setIsLoginOpen(true)}
-      className="btn btn-primary"
-    >
-      <LogIn size={18} />
-      Faculty Login
-    </button>
-  )}
+                {/* Logout button */}
+                <button onClick={handleLogout} className="btn btn-outline">
+                  <LogOut size={18} />
+                  Logout
+                </button>
 
-</nav>
+              </>
+
+            ) : (
+              /* If user is NOT logged in */
+              <button
+                onClick={() => setIsLoginOpen(true)}
+                className="btn btn-primary"
+              >
+                <LogIn size={18} />
+                Faculty Login
+              </button>
+            )}
+
+          </nav>
 
 
           {/* Mobile Menu Button */}
-          <button 
+          <button
             className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
@@ -115,25 +115,25 @@ const Header = () => {
               className="md:hidden border-b border-slate-200 overflow-hidden bg-white"
             >
               <div className="p-4 space-y-3">
-                 {isAuthenticated ? (
+                {isAuthenticated ? (
                   <>
                     <div className="flex items-center gap-3 w-full p-3 bg-slate-50 rounded-lg border border-slate-100 mb-2">
-                        <User size={20} className="text-slate-400"/>
-                        <div className="flex flex-col">
-                            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Logged in as</span>
-                            <span className="text-sm font-medium text-slate-700 truncate">{user?.userEmail}</span>
-                        </div>
+                      <User size={20} className="text-slate-400" />
+                      <div className="flex flex-col">
+                        <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Logged in as</span>
+                        <span className="text-sm font-medium text-slate-700 truncate">{user?.userEmail}</span>
+                      </div>
                     </div>
-                    
-                    <Link 
-                      to="/upload" 
+
+                    <Link
+                      to="/upload"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="flex items-center gap-3 w-full p-3 bg-indigo-50 text-primary rounded-lg font-medium"
                     >
                       <Upload size={20} />
                       Upload Publication
                     </Link>
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="flex items-center gap-3 w-full p-3 text-slate-600 hover:bg-slate-50 rounded-lg font-medium"
                     >
@@ -142,10 +142,10 @@ const Header = () => {
                     </button>
                   </>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => {
-                        setIsLoginOpen(true);
-                        setIsMobileMenuOpen(false);
+                      setIsLoginOpen(true);
+                      setIsMobileMenuOpen(false);
                     }}
                     className="flex items-center gap-3 w-full p-3 bg-indigo-50 text-primary rounded-lg font-medium"
                   >
@@ -159,9 +159,9 @@ const Header = () => {
         </AnimatePresence>
       </header>
 
-      <LoginModal 
-        isOpen={isLoginOpen} 
-        onClose={() => setIsLoginOpen(false)} 
+      <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
       />
     </>
   );
