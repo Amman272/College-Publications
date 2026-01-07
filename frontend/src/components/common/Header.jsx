@@ -31,15 +31,15 @@ const Header = () => {
             <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block"></div>
 
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-tr from-primary to-secondary rounded-lg flex items-center justify-center text-white shadow-lg group-hover:shadow-indigo-500/30 transition-all">
+              {/*<div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-tr from-primary to-secondary rounded-lg flex items-center justify-center text-white shadow-lg group-hover:shadow-indigo-500/30 transition-all">
                 <BookOpen size={20} className="md:w-6 md:h-6" />
-              </div>
+              </div>*/}
               <div className="flex flex-col">
                 <span className="font-heading font-bold text-sm md:text-lg leading-tight text-slate-900 line-clamp-1">
-                  Publishing Portal
+                  NRI Institute of Technology
                 </span>
                 <span className="text-[10px] md:text-xs text-slate-500 font-medium hidden sm:block">
-                  NRI Institute of Technology
+                  Publishing Portal
                 </span>
               </div>
             </Link>

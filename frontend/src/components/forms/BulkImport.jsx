@@ -159,6 +159,15 @@ const BulkImport = ({ isOpen, onClose, onSuccess }) => {
               if (yearNum < 1900) {
                 throw new Error('Invalid year: must be 1900 or later');
               }
+
+            // Validate pages field (only numbers and hyphens)
+            const pagesField = row['Pages'] || row['pages'] || '';
+            if (pagesField && String(pagesField).trim() !== '') {
+              const pagesStr = String(pagesField).trim();
+              if (!/^[0-9\-]+$/.test(pagesStr)) {
+                throw new Error('Invalid pages format: only numbers and hyphens allowed (e.g., 100-112)');
+              }
+            }
             }
 
             const payload = {
