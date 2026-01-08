@@ -19,7 +19,7 @@ const Home = () => {
 
       <main className="flex-grow container mx-auto px-4 py-8 space-y-8">
         {/* Hero Section */}
-        <section className="relative text-center py-20 px-4 overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-sm mb-12">
+        <section className="relative text-center py-12 md:py-20 px-4 overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-sm mb-12">
 
           {/* Background Decorative Elements */}
           <div className="absolute inset-0 z-0">
@@ -39,7 +39,7 @@ const Home = () => {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/60 backdrop-blur-md border border-slate-700 text-indigo-300 text-sm font-semibold shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/60 backdrop-blur-md border border-slate-700 text-indigo-300 text-xs md:text-sm font-semibold shadow-sm"
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
@@ -52,7 +52,7 @@ const Home = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.5 }}
-              className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1] drop-shadow-sm"
+              className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1] drop-shadow-sm"
             >
               Faculty <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Publications</span> Portal
             </motion.h1>
@@ -61,7 +61,7 @@ const Home = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="max-w-2xl mx-auto text-lg md:text-xl text-slate-200 leading-relaxed drop-shadow-sm"
+              className="max-w-2xl mx-auto text-base md:text-xl text-slate-200 leading-relaxed drop-shadow-sm"
             >
               A centralized repository for accessing and managing research publications, journals, and academic contributions by our esteemed faculty.
             </motion.p>

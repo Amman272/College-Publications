@@ -35,7 +35,7 @@ const Header = () => {
                 <BookOpen size={20} className="md:w-6 md:h-6" />
               </div>*/}
               <div className="flex flex-col">
-                <span className="font-heading font-bold text-sm md:text-lg leading-tight text-slate-900 line-clamp-1">
+                <span className="font-heading font-bold text-xs sm:text-sm md:text-lg leading-tight text-slate-900 line-clamp-1">
                   NRI Institute of Technology
                 </span>
                 <span className="text-[10px] md:text-xs text-slate-500 font-medium hidden sm:block">

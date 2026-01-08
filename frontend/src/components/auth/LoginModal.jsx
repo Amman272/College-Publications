@@ -91,7 +91,10 @@ const LoginModal = ({ isOpen, onClose }) => {
                 <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg ring-1 ring-white/30">
                   <Lock size={24} className="text-white" />
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight">Faculty Login</h2>
+                <h2 className="text-2xl text-white font-bold tracking-tight">
+                  Faculty Login
+                </h2>
+
                 <p className="text-indigo-100/80 text-sm mt-1 font-medium">Secure access for NRIIT faculty</p>
               </div>
             </div>

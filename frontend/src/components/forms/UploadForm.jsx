@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Added useRef
 import { Save, Edit, User, Mail, BookOpen, Building2, Users, FileText, Calendar, Hash, Link, Award, TrendingUp, Globe, CheckCircle2, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isValidEmailDomain, getEmailDomainError, ALLOWED_EMAIL_DOMAINS } from '../../config/constants';
 import api from '../../api/axios';
 
-const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
+const UploadForm = ({ onSuccess, initialData = null, onClose, hideSuccessPopup = false }) => {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
+
+  // 1. Create a reference to the form
+  const formRef = useRef(null);
 
   const initialForm = {
     publicationType: '',
@@ -68,7 +71,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
     }
 
     if (yearNum > currentYear) {
-      return `Year cannot be greater than ${currentYear}`;
+      return `Year cannot be greater than ${currentYear} `;
     }
 
     if (yearNum < 1900) {
@@ -129,8 +132,16 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // NOTE: No "e" argument needed anymore, because we aren't using the form event
+  const handleSubmit = async () => {
+
+    // 2. Manual Browser Validation
+    // This triggers the bubbles ("Please fill out this field")
+    // If invalid, it stops here. No reload happens.
+    if (formRef.current && !formRef.current.reportValidity()) {
+      return;
+    }
+
     setLoading(true);
     setMsg({ type: '', text: '' });
 
@@ -154,13 +165,24 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
         setMsg({ type: 'success', text: 'Publication added successfully!' });
         setFormData(initialForm);
       }
-      // Show fixed success popup
-      setShowSuccessPopup(true);
-      setTimeout(() => setShowSuccessPopup(false), 4000);
 
+      // Show fixed success popup locally
+      if (!hideSuccessPopup) {
+        setShowSuccessPopup(true);
+        setTimeout(() => setShowSuccessPopup(false), 4000);
+      }
 
-      if (onSuccess) onSuccess();
-      if (onClose) setTimeout(onClose, 1000);
+      // 3. Delay the parent action
+      // We wait 1.5 seconds to ensure the user sees the popup
+      setTimeout(() => {
+        if (onSuccess) onSuccess();
+
+        // Only close automatically if we are NOT editing
+        // (If editing, user usually wants to see the success message then close manually)
+        if (onClose && !initialData) {
+          onClose();
+        }
+      }, 1500);
 
     } catch (err) {
       console.error(err);
@@ -175,7 +197,8 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
   const sectionClass = "p-6 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    // 4. Attach Ref and prevent Default on the form tag itself (for Enter key safety)
+    <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6">
       <AnimatePresence>
         {msg.text && (
           <motion.div
@@ -229,7 +252,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
                 name="email"
                 value={formData.email || ''}
                 onChange={handleChange}
-                className={`${inputClass} ${validationErrors.email ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`${inputClass} ${validationErrors.email ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''} `}
                 placeholder={ALLOWED_EMAIL_DOMAINS.length > 0 ? `john@${ALLOWED_EMAIL_DOMAINS[0]}` : "john@example.com"}
               />
               {validationErrors.email && (
@@ -255,7 +278,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
                 <option value="CIVIL">CIVIL</option>
                 <option value="IT">IT</option>
                 <option value="AIML">AIML</option>
-                <option value="DS">DS</option>
+                <option value="CSD">CSD</option>
                 <option value="FED">FED</option>
                 <option value="MBA">MBA</option>
               </select>
@@ -271,7 +294,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
                 name="phone"
                 value={formData.phone || ''}
                 onChange={handleChange}
-                className={`${inputClass} ${validationErrors.phone ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`${inputClass} ${validationErrors.phone ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''} `}
                 placeholder="9999988888"
               />
               {validationErrors.phone && (
@@ -382,7 +405,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
                 name="year"
                 value={formData.year || ''}
                 onChange={handleChange}
-                className={`${inputClass} ${validationErrors.year ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`${inputClass} ${validationErrors.year ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''} `}
                 placeholder="2024"
               />
               {validationErrors.year && (
@@ -560,7 +583,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
         </div>
       </div>
 
-      {/* Fixed Success Notification Popup */}
+      {/* Fixed Success Notification Popup - Local to Form */}
       <AnimatePresence>
         {showSuccessPopup && (
           <motion.div
@@ -583,6 +606,7 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
                 <button
                   onClick={() => setShowSuccessPopup(false)}
                   className="text-white/80 hover:text-white transition-colors"
+                  type="button" // CRITICAL: Prevent this button from submitting
                 >
                   <X size={20} />
                 </button>
@@ -594,7 +618,8 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
 
       {/* Submit Button */}
       <motion.button
-        type="submit"
+        type="button" // 5. CHANGED TO 'button' TO PREVENT RELOAD
+        onClick={handleSubmit} // 6. CALL HANDLER ON CLICK
         disabled={loading}
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
