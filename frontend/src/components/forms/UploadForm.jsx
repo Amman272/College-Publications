@@ -62,38 +62,14 @@ const UploadForm = ({ onSuccess, initialData = null, onClose }) => {
     setLoading(true);
     setMsg({ type: '', text: '' });
 
-    // Validation
-    const acceptedDomains = import.meta.env.VITE_ACCEPTED_DOMAINS 
-      ? import.meta.env.VITE_ACCEPTED_DOMAINS.split(',').map(d => d.trim().toLowerCase()) 
-      : [];
-    const emailDomain = formData.email.substring(formData.email.lastIndexOf("@")).toLowerCase();
-    
-    if (acceptedDomains.length > 0 && !acceptedDomains.includes(emailDomain)) {
-      const errorMsg = `Email domain ${emailDomain} is not allowed. Accepted: ${acceptedDomains.join(', ')}`;
-      setMsg({ type: 'error', text: errorMsg });
-      alert(errorMsg);
-      setLoading(false);
-      return;
-    }
-
-    const phoneDigits = String(formData.phone).replace(/\D/g, '');
-    if (phoneDigits.length !== 10) {
-      const errorMsg = "Phone number must be exactly 10 digits.";
-      setMsg({ type: 'error', text: errorMsg });
-      alert(errorMsg);
-      setLoading(false);
-      return;
-    }
-
     try {
-      const payload = { ...formData, phone: phoneDigits };
       if (initialData) {
          // Edit Mode
-         await api.put('/form/formEntryUpdate', payload);
+         await api.put('/form/formEntryUpdate', formData);
          setMsg({ type: 'success', text: 'Publication updated successfully!' });
       } else {
          // Create Mode
-         await api.post('/form/formEntry', payload);
+         await api.post('/form/formEntry', formData);
          setMsg({ type: 'success', text: 'Publication added successfully!' });
          setFormData(initialForm);
       }
