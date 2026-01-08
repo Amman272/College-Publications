@@ -191,7 +191,7 @@ const PublicationsTable = ({ showActions = false }) => {
                 {columns.map((col) => (
                   <th
                     key={col.key}
-                    className="px-4 py-3 align-top bg-slate-50/50 hover:bg-slate-100 cursor-pointer transition-colors group select-none"
+                    className="px-4 py-3 align-top bg-slate-50/50 hover:bg-slate-200/60 hover:text-indigo-700 cursor-pointer transition-colors group select-none border-r border-slate-200 last:border-r-0"
                     style={{ minWidth: col.minWidth }}
                     onClick={() => requestSort(col.key)}
                   >
@@ -236,12 +236,12 @@ const PublicationsTable = ({ showActions = false }) => {
                 currentItems.map((row) => (
                   <tr
                     key={row.id}
-                    className="hover:bg-slate-50 transition-colors group"
+                    className="hover:bg-slate-100 transition-colors group"
                   >
                     {columns.map((col) => (
                       <td
                         key={`${row.id}-${col.key}`}
-                        className="px-4 py-3 text-slate-700"
+                        className="px-4 py-3 text-slate-700 border-r border-slate-100 last:border-r-0"
                       >
                         {col.isLink ? (
                           row[col.key] ? (
