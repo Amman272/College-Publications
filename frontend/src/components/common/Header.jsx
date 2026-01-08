@@ -25,7 +25,7 @@ const Header = () => {
           <div className="flex items-center gap-4">
             {/* Collage Logo Placeholder */}
             <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 overflow-hidden shrink-0 text-slate-400">
-              <img src="/NRI-logo.jpeg" alt="Nri collefe logo " />
+              <img src="/NRI-logo.png" alt="Nri collefe logo " />
             </div>
 
             <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block"></div>
