@@ -71,6 +71,9 @@ router.post("/formEntry", verifyToken, async (req, res) => {
 
 
   try {
+    // Validate inputs
+    const validatedPhone = validateInputs(email, phone);
+
     // Check for duplicate title
     const [existingRows] = await db.query("SELECT 1 FROM publications WHERE title = ?", [title]);
     if (existingRows.length > 0) {
@@ -108,7 +111,7 @@ router.post("/formEntry", verifyToken, async (req, res) => {
     return res.status(200).json({ message: "data stored suceessfully" });
   } catch (e) {
     console.log(e);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(400).json({ message: e.message || "Internal server error" });
   }
 });
 
@@ -245,16 +248,20 @@ router.put("/formEntryUpdate", verifyToken, async (req, res) => {
         .json({ message: "You are not authorized to edit this entry" });
     }
 
-    await db.query(
-      `UPDATE publications 
-      SET publicationType = ?, mainAuthor = ?, title = ?, email = ?, phone = ?, dept = ?, coauthors = ?, journal = ?, publisher = ?, year = ?, vol = ?, issueNo = ?, pages = ?, indexation = ?, issnNo = ?, journalLink = ?, ugcApproved = ?, impactFactor = ?, pdfUrl = ?
-      WHERE id = ?`,
-      [
-        publicationType,
+    // Validate inputs
+    const validatedPhone = validateInputs(email, phone);
+
+    const info = db
+      .prepare(
+        `UPDATE publications 
+      SET mainAuthor = ?, title = ?, email = ?, phone = ?, dept = ?, coauthors = ?, journal = ?, publisher = ?, year = ?, vol = ?, issueNo = ?, pages = ?, indexation = ?, issnNo = ?, journalLink = ?, ugcApproved = ?, impactFactor = ?, pdfUrl = ?
+      WHERE id = ?`
+      )
+      .run(
         mainAuthor,
         title,
         email,
-        phone,
+        validatedPhone,
         dept,
         coauthors,
         journal,
@@ -277,7 +284,7 @@ router.put("/formEntryUpdate", verifyToken, async (req, res) => {
     return res.status(200).json({ message: "Data updated successfully" });
   } catch (e) {
     console.log(e);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(400).json({ message: e.message || "Internal server error" });
   }
 });
 
