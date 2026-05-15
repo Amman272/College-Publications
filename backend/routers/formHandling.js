@@ -12,47 +12,33 @@ const __dirname = path.dirname(__filename);
 //const adminEmails = ["ammanfawaz272@gmail.com"];
 
 //const isAdmin = (email) => adminEmails.includes(email);
-const isAdmin = (email) => {
+//const isAdmin = (email) => adminEmails.includes(email);
+const isAdmin = async (email) => {
   try {
-    const user = db.prepare("select 1 from admins WHERE EMAIL = ? COLLATE NOCASE").get(email);
-    return !!user;
+    const [rows] = await db.query("select 1 from admins WHERE EMAIL = ?", [email]);
+    return rows.length > 0;
   } catch (err) {
     console.error("isAdmin check failed:", err);
     return false;
   }
 };
 
-const validateInputs = (email, phone) => {
-  const acceptedDomains = process.env.ACCEPTED_DOMAINS ? process.env.ACCEPTED_DOMAINS.split(',').map(d => d.trim().toLowerCase()) : [];
-  const emailDomain = email.substring(email.lastIndexOf("@")).toLowerCase();
-  
-  if (acceptedDomains.length > 0 && !acceptedDomains.includes(emailDomain)) {
-    throw new Error(`Email domain ${emailDomain} is not allowed. Accepted: ${acceptedDomains.join(', ')}`);
-  }
-
-  const phoneDigits = String(phone).replace(/\D/g, '');
-  if (phoneDigits.length !== 10) {
-    throw new Error("Phone number must be exactly 10 digits.");
-  }
-  return phoneDigits;
-};
-
-router.post("/isAdmin", verifyToken,(req,res)=>{
+router.post("/isAdmin", verifyToken, async (req, res) => {
   try {
     const email = req.user.userEmail;
     console.log(`[DEBUG] /isAdmin check for: '${email}'`);
-    const user = db.prepare("select 1 from admins WHERE EMAIL = ? COLLATE NOCASE").get(email);
-    console.log(`[DEBUG] /isAdmin DB result:`, user);
-    return res.status(200).json({isAdmin: !!user });
+    const isUserAdmin = await isAdmin(email);
+    console.log(`[DEBUG] /isAdmin DB result:`, isUserAdmin);
+    return res.status(200).json({ isAdmin: isUserAdmin });
   } catch (err) {
     console.error("/isAdmin route failed:", err);
     return res.status(500).json({ message: "Internal server error", error: err.message, stack: err.stack });
   }
 });
 
-const logAction = (userEmail, action, details) => {
+const logAction = async (userEmail, action, details) => {
   try {
-    db.prepare("INSERT INTO audit_logs (user_email, action, details) VALUES (?, ?, ?)").run(userEmail, action, details);
+    await db.query("INSERT INTO audit_logs (user_email, action, details) VALUES (?, ?, ?)", [userEmail, action, details]);
   } catch (err) {
     console.error("Failed to log action:", err);
   }
@@ -60,8 +46,9 @@ const logAction = (userEmail, action, details) => {
 
 
 
-router.post("/formEntry", verifyToken, (req, res) => {
+router.post("/formEntry", verifyToken, async (req, res) => {
   const {
+    publicationType,
     mainAuthor,
     title,
     email,
@@ -81,44 +68,46 @@ router.post("/formEntry", verifyToken, (req, res) => {
     impactFactor,
     pdfUrl,
   } = req.body;
-  
+
 
   try {
     // Validate inputs
     const validatedPhone = validateInputs(email, phone);
 
     // Check for duplicate title
-    const existing = db.prepare("SELECT 1 FROM publications WHERE title = ? COLLATE NOCASE").get(title);
-    if (existing) {
+    const [existingRows] = await db.query("SELECT 1 FROM publications WHERE title = ?", [title]);
+    if (existingRows.length > 0) {
       return res.status(409).json({ message: "Duplicate entry: Publication with this title already exists." });
     }
 
-    db.prepare(
+    await db.query(
       `INSERT INTO publications 
-  (mainAuthor, title, email, phone, dept, coauthors, journal, publisher, year, vol, issueNo, pages, indexation, issnNo, journalLink, ugcApproved, impactFactor, pdfUrl)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      mainAuthor,
-      title,
-      email,
-      validatedPhone,
-      dept,
-      coauthors,
-      journal,
-      publisher,
-      year,
-      vol,
-      issueNo,
-      pages,
-      indexation,
-      issnNo,
-      journalLink,
-      ugcApproved,
-      impactFactor,
-      pdfUrl
+  (publicationType, mainAuthor, title, email, phone, dept, coauthors, journal, publisher, year, vol, issueNo, pages, indexation, issnNo, journalLink, ugcApproved, impactFactor, pdfUrl)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        publicationType,
+        mainAuthor,
+        title,
+        email,
+        phone,
+        dept,
+        coauthors,
+        journal,
+        publisher,
+        year,
+        vol,
+        issueNo,
+        pages,
+        indexation,
+        issnNo,
+        journalLink,
+        ugcApproved,
+        impactFactor,
+        pdfUrl
+      ]
     );
 
-    logAction(req.user.userEmail, "CREATE", `Added publication: ${title}`);
+    await logAction(req.user.userEmail, "CREATE", `Created publication: ${title}`);
     return res.status(200).json({ message: "data stored suceessfully" });
   } catch (e) {
     console.log(e);
@@ -126,7 +115,7 @@ router.post("/formEntry", verifyToken, (req, res) => {
   }
 });
 
-router.put("/formEntryBatchUpdate", verifyToken, (req, res) => {
+router.put("/formEntryBatchUpdate", verifyToken, async (req, res) => {
   // Batch update usually for admin or massive changes, strictly restrict or keep as is?
   // User didn't specify batch update rules, but implied admin access allows editing ANY entry.
   // For now I will assume this is an admin-only or specific feature.
@@ -135,7 +124,8 @@ router.put("/formEntryBatchUpdate", verifyToken, (req, res) => {
   // Actually, let's restrict to Admin for safety if this is "Bulk Import" related fix.
   // But wait, user said "add a admin acesss acount whihc allows any entry to be deleted and eddited".
 
-  if (!isAdmin(req.user.userEmail)) {
+  const isUserAdmin = await isAdmin(req.user.userEmail);
+  if (!isUserAdmin) {
     return res
       .status(403)
       .json({ message: "Only admins can perform batch updates." });
@@ -147,11 +137,14 @@ router.put("/formEntryBatchUpdate", verifyToken, (req, res) => {
     return res.status(400).json({ message: "Array expected" });
   }
 
+  const connection = await db.getConnection();
   try {
-    // 1. Prepare update statement
-    const stmt = db.prepare(`
+    await connection.beginTransaction();
+
+    const query = `
       UPDATE publications
       SET 
+        publicationType = COALESCE(?, publicationType),
         mainAuthor = COALESCE(?, mainAuthor),
         title = COALESCE(?, title),
         email = COALESCE(?, email),
@@ -171,52 +164,52 @@ router.put("/formEntryBatchUpdate", verifyToken, (req, res) => {
         impactFactor = COALESCE(?, impactFactor),
         pdfUrl = COALESCE(?, pdfUrl)
       WHERE id = ?
-    `);
+    `;
 
-    // 2. Transaction function
-    const updateMany = db.transaction((rows) => {
-      for (const row of rows) {
-        stmt.run(
-          row.mainAuthor ?? null,
-          row.title ?? null,
-          row.email ?? null,
-          row.phone ?? null,
-          row.dept ?? null,
-          row.coauthors ?? null,
-          row.journal ?? null,
-          row.publisher ?? null,
-          row.year ?? null,
-          row.vol ?? null,
-          row.issueNo ?? null,
-          row.pages ?? null,
-          row.indexation ?? null,
-          row.issnNo ?? null,
-          row.journalLink ?? null,
-          row.ugcApproved ?? null,
-          row.impactFactor ?? null,
-          row.pdfUrl ?? null,
-          row.id
-        );
-      }
-    });
+    for (const row of updates) {
+      await connection.query(query, [
+        row.publicationType ?? null,
+        row.mainAuthor ?? null,
+        row.title ?? null,
+        row.email ?? null,
+        row.phone ?? null,
+        row.dept ?? null,
+        row.coauthors ?? null,
+        row.journal ?? null,
+        row.publisher ?? null,
+        row.year ?? null,
+        row.vol ?? null,
+        row.issueNo ?? null,
+        row.pages ?? null,
+        row.indexation ?? null,
+        row.issnNo ?? null,
+        row.journalLink ?? null,
+        row.ugcApproved ?? null,
+        row.impactFactor ?? null,
+        row.pdfUrl ?? null,
+        row.id
+      ]);
+    }
 
-    // 3. Execute updates
-    updateMany(updates);
-
-    logAction(req.user.userEmail, "BATCH_UPDATE", `Batch updated ${updates.length} entries`);
+    await connection.commit();
+    await logAction(req.user.userEmail, "BATCH_UPDATE", `Batch updated ${updates.length} entries`);
 
     return res
       .status(200)
       .json({ message: "Batch update successful", count: updates.length });
   } catch (err) {
+    await connection.rollback();
     console.log(err);
     return res.status(500).json({ message: "Batch update failed" });
+  } finally {
+    connection.release();
   }
 });
 
-router.put("/formEntryUpdate", verifyToken, (req, res) => {
+router.put("/formEntryUpdate", verifyToken, async (req, res) => {
   const {
     id,
+    publicationType,
     mainAuthor,
     title,
     email,
@@ -241,15 +234,15 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
 
   try {
     // Check ownership or admin
-    const entry = db
-      .prepare("SELECT email FROM publications WHERE id = ?")
-      .get(id);
+    const [rows] = await db.query("SELECT email FROM publications WHERE id = ?", [id]);
+    const entry = rows[0];
 
     if (!entry) {
       return res.status(404).json({ message: "Entry not found" });
     }
 
-    if (entry.email !== userEmail && !isAdmin(userEmail)) {
+    const isUserAdmin = await isAdmin(userEmail);
+    if (entry.email !== userEmail && !isUserAdmin) {
       return res
         .status(403)
         .json({ message: "You are not authorized to edit this entry" });
@@ -284,9 +277,10 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
         impactFactor,
         pdfUrl,
         id
-      );
+      ]
+    );
 
-    logAction(userEmail, "UPDATE", `Updated publication ID: ${id}`);
+    await logAction(userEmail, "UPDATE", `Updated publication ID: ${id}`);
     return res.status(200).json({ message: "Data updated successfully" });
   } catch (e) {
     console.log(e);
@@ -294,30 +288,30 @@ router.put("/formEntryUpdate", verifyToken, (req, res) => {
   }
 });
 
-router.delete("/deleteEntry/:id", verifyToken, (req, res) => {
+router.delete("/deleteEntry/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const userEmail = req.user.userEmail;
-console.log(userEmail);
+  console.log(userEmail);
   try {
     // 1. Check ownership
-    const entry = db
-      .prepare("SELECT email FROM publications WHERE id = ?")
-      .get(id);
+    const [rows] = await db.query("SELECT email FROM publications WHERE id = ?", [id]);
+    const entry = rows[0];
 
     if (!entry) {
       return res.status(404).json({ message: "Publication not found" });
     }
 
-    if (entry.email !== userEmail && !isAdmin(userEmail)) {
+    const isUserAdmin = await isAdmin(userEmail);
+    if (entry.email !== userEmail && !isUserAdmin) {
       return res
         .status(403)
         .json({ message: "You are not authorized to delete this entry" });
     }
 
     // 2. Delete
-    const info = db.prepare("DELETE FROM publications WHERE id = ?").run(id);
+    await db.query("DELETE FROM publications WHERE id = ?", [id]);
 
-    logAction(userEmail, "DELETE", `Deleted publication ID: ${id}`);
+    await logAction(userEmail, "DELETE", `Deleted publication ID: ${id}`);
 
     return res
       .status(200)
@@ -328,9 +322,9 @@ console.log(userEmail);
   }
 });
 
-router.get("/formGet", (req, res) => {
+router.get("/formGet", async (req, res) => {
   try {
-    const rows = db.prepare("select * from publications").all();
+    const [rows] = await db.query("select * from publications");
     return res.json(rows);
   } catch (e) {
     console.error(e);
@@ -341,14 +335,14 @@ router.get("/formGet", (req, res) => {
 router.get("/downloadExcel", async (req, res) => {
   try {
     // Fetch all rows
-    const rows = db.prepare("SELECT * FROM publications").all();
+    const [rows] = await db.query("SELECT * FROM publications");
 
     // Create workbook + sheet
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Publications");
 
     // 1. Add Title Row
-    worksheet.mergeCells("A1:S1");
+    worksheet.mergeCells("A1:T1");
     const titleRow = worksheet.getRow(1);
     titleRow.getCell(1).value = "FACULTY PAPER PUBLICATIONS";
     titleRow.getCell(1).font = {
@@ -363,6 +357,7 @@ router.get("/downloadExcel", async (req, res) => {
     // 2. Define Headers & Widths manually
     const columns = [
       { header: "ID", key: "id", width: 10 },
+      { header: "Publication Type", key: "publicationType", width: 25 },
       { header: "Main Author", key: "mainAuthor", width: 25 },
       { header: "Title", key: "title", width: 40 },
       { header: "Email", key: "email", width: 30 },
@@ -376,11 +371,11 @@ router.get("/downloadExcel", async (req, res) => {
       { header: "Issue No", key: "issueNo", width: 10 },
       { header: "Pages", key: "pages", width: 15 },
       { header: "Indexation", key: "indexation", width: 20 },
-      { header: "ISSN No", key: "issnNo", width: 20 },
+      { header: "ISSN/ISBN No", key: "issnNo", width: 20 },
       { header: "Journal Link", key: "journalLink", width: 30 },
       { header: "UGC Approved", key: "ugcApproved", width: 15 },
       { header: "Impact Factor", key: "impactFactor", width: 15 },
-      { header: "PDF URL", key: "pdfUrl", width: 40 },
+      { header: "DOI Link", key: "pdfUrl", width: 40 },
     ];
 
     // Set widths
@@ -413,7 +408,7 @@ router.get("/downloadExcel", async (req, res) => {
     rows.forEach((row) => {
       const rowData = columns.map((col) => row[col.key]);
       const newRow = worksheet.addRow(rowData);
-      
+
       // Style Data Cells: Alignment and Wrap Text for readability
       newRow.eachCell({ includeEmpty: true }, (cell) => {
         cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
@@ -455,7 +450,7 @@ router.get("/downloadTemplate", async (req, res) => {
     const worksheet = workbook.addWorksheet("Publications");
 
     // 1. Add Title Row
-    worksheet.mergeCells("A1:S1");
+    worksheet.mergeCells("A1:T1");
     const titleRow = worksheet.getRow(1);
     titleRow.getCell(1).value = "FACULTY PAPER PUBLICATIONS";
     titleRow.getCell(1).font = {
@@ -470,6 +465,7 @@ router.get("/downloadTemplate", async (req, res) => {
     // 2. Define Headers & Widths manually
     const columns = [
       { header: "ID", width: 10 },
+      { header: "Publication Type", width: 25 },
       { header: "Main Author", width: 25 },
       { header: "Title", width: 40 },
       { header: "Email", width: 30 },
@@ -483,11 +479,11 @@ router.get("/downloadTemplate", async (req, res) => {
       { header: "Issue No", width: 10 },
       { header: "Pages", width: 15 },
       { header: "Indexation", width: 20 },
-      { header: "ISSN No", width: 20 },
+      { header: "ISSN/ISBN No", width: 20 },
       { header: "Journal Link", width: 30 },
       { header: "UGC Approved", width: 15 },
       { header: "Impact Factor", width: 15 },
-      { header: "PDF URL", width: 40 },
+      { header: "DOI Link", width: 40 },
     ];
 
     // Set widths

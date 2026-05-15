@@ -4,28 +4,33 @@ import { db } from "../db.js";
 
 const router = Router();
 
-const isAdmin = (email) => {
-  const row = db.prepare("select 1 from admins WHERE EMAIL = ? COLLATE NOCASE").get(email);
-  return !!row;
+const isAdmin = async (email) => {
+  try {
+    const [rows] = await db.query("select 1 from admins WHERE EMAIL = ?", [email]);
+    return rows.length > 0;
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
 };
 
-router.get("/allAdmins", verifyToken, (req, res) => {
-  if (!isAdmin(req.user.userEmail)) {
+router.get("/allAdmins", verifyToken, async (req, res) => {
+  const isUserAdmin = await isAdmin(req.user.userEmail);
+  if (!isUserAdmin) {
     return res.status(403).json({ message: "You are not an admin" });
   }
-  const admins = db
-    .prepare("SELECT EMAIL as email, created_at FROM admins ORDER BY created_at ASC")
-    .all();
+  const [admins] = await db.query("SELECT EMAIL as email, created_at FROM admins ORDER BY created_at ASC");
   return res.status(200).json(admins);
 });
 
-router.post("/addAdmin", verifyToken, (req, res) => {
+router.post("/addAdmin", verifyToken, async (req, res) => {
   const { addEmail } = req.body;
-  if (!isAdmin(req.user.userEmail)) {
+  const isUserAdmin = await isAdmin(req.user.userEmail);
+  if (!isUserAdmin) {
     return res.status(403).json({ message: "You are not an admin" });
   }
   try {
-    db.prepare("INSERT INTO admins (email) VALUES (?)").run(addEmail);
+    await db.query("INSERT INTO admins (email) VALUES (?)", [addEmail]);
     return res.status(200).json({ message: "Admin added successfully" });
   } catch (error) {
     console.error(error);
@@ -33,9 +38,10 @@ router.post("/addAdmin", verifyToken, (req, res) => {
   }
 });
 
-router.post("/deleteAdmin", verifyToken, (req, res) => {
+router.post("/deleteAdmin", verifyToken, async (req, res) => {
   const { deleteEmail } = req.body;
-  if (!isAdmin(req.user.userEmail)) {
+  const isUserAdmin = await isAdmin(req.user.userEmail);
+  if (!isUserAdmin) {
     return res.status(403).json({ message: "You are not an admin" });
   }
 
@@ -43,8 +49,8 @@ router.post("/deleteAdmin", verifyToken, (req, res) => {
     return res.status(400).json({ message: "You cannot remove yourself as an admin." });
   }
   try {
-    const info = db.prepare("DELETE FROM admins WHERE EMAIL=? COLLATE NOCASE").run(deleteEmail);
-    if (info.changes === 0) {
+    const [result] = await db.query("DELETE FROM admins WHERE EMAIL=?", [deleteEmail]);
+    if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Admin not found" });
     }
     return res.status(200).json({ message: "Admin removed successfully" });
@@ -54,29 +60,30 @@ router.post("/deleteAdmin", verifyToken, (req, res) => {
   }
 });
 
-const logAction = (userEmail, action, details) => {
+const logAction = async (userEmail, action, details) => {
   try {
-    db.prepare("INSERT INTO audit_logs (user_email, action, details) VALUES (?, ?, ?)").run(userEmail, action, details);
+    await db.query("INSERT INTO audit_logs (user_email, action, details) VALUES (?, ?, ?)", [userEmail, action, details]);
   } catch (err) {
     console.error("Failed to log action:", err);
   }
 };
 
-router.get("/logs", verifyToken, (req, res) => {
+router.get("/logs", verifyToken, async (req, res) => {
   const email = req.user.userEmail;
-  if (!isAdmin(email)) {
+  const isUserAdmin = await isAdmin(email);
+  if (!isUserAdmin) {
     return res.status(403).json({ message: "Unauthorized" });
   }
-  
+
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
 
   try {
-    const logs = db.prepare("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT ? OFFSET ?").all(limit, offset);
-    const countResult = db.prepare("SELECT COUNT(*) as count FROM audit_logs").get();
-    const totalLogs = countResult.count;
-    
+    const [logs] = await db.query("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT ? OFFSET ?", [limit, offset]);
+    const [countResult] = await db.query("SELECT COUNT(*) as count FROM audit_logs");
+    const totalLogs = countResult[0].count;
+
     return res.json({
       logs,
       total: totalLogs,
@@ -89,14 +96,15 @@ router.get("/logs", verifyToken, (req, res) => {
   }
 });
 
-router.post("/deleteAll", verifyToken, (req, res) => {
+router.post("/deleteAll", verifyToken, async (req, res) => {
   const email = req.user.userEmail;
-  if (!isAdmin(email)) {
+  const isUserAdmin = await isAdmin(email);
+  if (!isUserAdmin) {
     return res.status(403).json({ message: "Unauthorized" });
   }
   try {
-    db.prepare("DELETE FROM publications").run();
-    logAction(email, "DELETE_ALL", "Deleted all publications");
+    await db.query("DELETE FROM publications");
+    await logAction(email, "DELETE_ALL", "Deleted all publications");
     return res.status(200).json({ message: "All publications deleted" });
   } catch (err) {
     console.error(err);
